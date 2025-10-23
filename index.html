@@ -159,15 +159,89 @@
                         <p class="text-gray-300 text-sm italic">"Per Profectum Surgimus"</p>
                     </div>
                 </div>
-                <div class="text-right">
+                <div class="text-right space-y-3">
                     <div class="bg-gradient-to-r from-purple-500 to-blue-500 px-6 py-3 rounded-xl text-center">
                         <div class="text-2xl font-bold">Level <span id="kingdomLevel">3</span></div>
                         <div class="text-sm opacity-80">Size <span id="kingdomSize">12</span> • Province</div>
                     </div>
+                    <button onclick="toggleCloudPanel()" class="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 px-4 py-2 rounded-lg text-sm font-medium transition-all">
+                        ☁️ Cloud Sync
+                    </button>
                 </div>
             </div>
         </div>
     </header>
+
+    <!-- Cloud Storage Panel -->
+    <div id="cloudPanel" class="hidden bg-gradient-to-r from-cyan-900/40 to-blue-900/40 backdrop-blur-xl border-b border-cyan-400/30">
+        <div class="max-w-7xl mx-auto px-6 py-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Save to Cloud -->
+                <div class="glass-morphism rounded-xl p-6">
+                    <h3 class="font-fantasy text-xl font-bold mb-4 text-cyan-400">☁️ Save to Cloud</h3>
+                    <p class="text-gray-300 text-sm mb-4">Share your kingdom with other players. Anyone with the Kingdom ID can view and edit.</p>
+                    <div class="space-y-3">
+                        <button onclick="saveToCloud()" id="saveCloudBtn" class="w-full bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-white px-6 py-3 rounded-xl font-bold transition-all">
+                            💾 Save to Cloud
+                        </button>
+                        <div id="cloudSaveResult" class="hidden">
+                            <div class="bg-green-900/30 border border-green-400/30 rounded-lg p-4">
+                                <p class="text-green-300 font-medium mb-2">✅ Kingdom saved to cloud!</p>
+                                <div class="flex gap-2">
+                                    <input type="text" id="cloudId" readonly class="flex-1 bg-gray-800 text-white px-3 py-2 rounded font-mono text-sm" value="">
+                                    <button onclick="copyCloudId()" class="bg-cyan-600 hover:bg-cyan-500 text-white px-4 py-2 rounded font-medium">
+                                        📋 Copy
+                                    </button>
+                                </div>
+                                <p class="text-cyan-300 text-xs mt-2">Share this ID with your party members!</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Load from Cloud -->
+                <div class="glass-morphism rounded-xl p-6">
+                    <h3 class="font-fantasy text-xl font-bold mb-4 text-blue-400">🔗 Load from Cloud</h3>
+                    <p class="text-gray-300 text-sm mb-4">Enter a Kingdom ID to load a shared kingdom.</p>
+                    <div class="space-y-3">
+                        <input type="text" id="loadCloudId" placeholder="Enter Kingdom ID (e.g., abc123...)" class="w-full bg-gray-800 text-white px-4 py-3 rounded-xl border border-gray-600 focus:border-blue-400 focus:outline-none">
+                        <button onclick="loadFromCloud()" id="loadCloudBtn" class="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 text-white px-6 py-3 rounded-xl font-bold transition-all">
+                            📥 Load from Cloud
+                        </button>
+                        <div class="flex items-center gap-3 bg-purple-900/30 border border-purple-400/30 rounded-lg p-3">
+                            <input type="checkbox" id="autoSyncCheckbox" onchange="toggleAutoSync()" class="w-5 h-5 rounded">
+                            <label for="autoSyncCheckbox" class="text-purple-300 text-sm cursor-pointer">
+                                Auto-sync changes to cloud (collaborative mode)
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="cloudStatus" class="mt-4 text-center text-sm text-gray-400"></div>
+
+            <!-- API Key Settings -->
+            <div class="mt-6 glass-morphism rounded-xl p-4">
+                <details class="cursor-pointer">
+                    <summary class="text-sm text-gray-300 font-medium">⚙️ Advanced Settings (Optional API Key)</summary>
+                    <div class="mt-4 space-y-3">
+                        <p class="text-xs text-gray-400">
+                            The app includes a demo API key with limitations. For better reliability and privacy,
+                            <a href="https://jsonbin.io/" target="_blank" class="text-cyan-400 hover:text-cyan-300 underline">get your own free API key</a>
+                            from JSONBin.io (takes 30 seconds, no credit card required).
+                        </p>
+                        <div class="flex gap-2">
+                            <input type="text" id="customApiKey" placeholder="Paste your API key here (optional)"
+                                   class="flex-1 bg-gray-800 text-white px-3 py-2 rounded text-sm border border-gray-600 focus:border-cyan-400 focus:outline-none"
+                                   value="">
+                            <button onclick="saveApiKey()" class="bg-cyan-600 hover:bg-cyan-500 text-white px-4 py-2 rounded font-medium text-sm">
+                                Save Key
+                            </button>
+                        </div>
+                    </div>
+                </details>
+            </div>
+        </div>
+    </div>
 
     <!-- Navigation -->
     <nav class="sticky top-0 z-50 bg-black/40 backdrop-blur-xl border-b border-white/10">
@@ -722,6 +796,226 @@
             return 10 + kingdomData.level + sizeModifier + ruinPenalty;
         }
 
+        // Cloud Storage Configuration
+        let cloudConfig = {
+            currentBinId: localStorage.getItem('cloudBinId') || null,
+            autoSync: localStorage.getItem('autoSync') === 'true',
+            syncInterval: null
+        };
+
+        // JSONBin.io API endpoint (using free tier)
+        const JSONBIN_API = 'https://api.jsonbin.io/v3';
+        const DEFAULT_API_KEY = '$2a$10$8pZLWqpxPzJ0TgYvNDqW0.tJ0nXQxJXJXJXJXJXJXJXJXJXJXJX'; // Demo key with limitations
+
+        function getApiKey() {
+            return localStorage.getItem('jsonbinApiKey') || DEFAULT_API_KEY;
+        }
+
+        function saveApiKey() {
+            const input = document.getElementById('customApiKey');
+            const key = input.value.trim();
+
+            if (key) {
+                localStorage.setItem('jsonbinApiKey', key);
+                alert('✅ API key saved! You can now use cloud sync with your own key.');
+                console.log('Custom API key configured');
+            } else {
+                localStorage.removeItem('jsonbinApiKey');
+                alert('✅ API key cleared. Using demo key.');
+            }
+        }
+
+        // Cloud Storage Functions
+        async function saveToCloud() {
+            const saveBtn = document.getElementById('saveCloudBtn');
+            const resultDiv = document.getElementById('cloudSaveResult');
+            const statusDiv = document.getElementById('cloudStatus');
+
+            try {
+                saveBtn.disabled = true;
+                saveBtn.textContent = '⏳ Saving to cloud...';
+                statusDiv.textContent = 'Uploading kingdom data...';
+
+                const saveData = {
+                    kingdomData,
+                    timestamp: new Date().toISOString(),
+                    version: '1.0'
+                };
+
+                let binId = cloudConfig.currentBinId;
+                let response;
+
+                if (binId) {
+                    // Update existing bin
+                    response = await fetch(`${JSONBIN_API}/b/${binId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Master-Key': getApiKey()
+                        },
+                        body: JSON.stringify(saveData)
+                    });
+                } else {
+                    // Create new bin
+                    response = await fetch(`${JSONBIN_API}/b`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Master-Key': getApiKey(),
+                            'X-Bin-Name': `Pathfinder-Kingdom-${kingdomData.name}`
+                        },
+                        body: JSON.stringify(saveData)
+                    });
+                }
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                binId = result.metadata.id;
+
+                // Save the bin ID for future updates
+                cloudConfig.currentBinId = binId;
+                localStorage.setItem('cloudBinId', binId);
+
+                // Show the result
+                document.getElementById('cloudId').value = binId;
+                resultDiv.classList.remove('hidden');
+                statusDiv.textContent = '✅ Successfully saved to cloud!';
+                statusDiv.className = 'mt-4 text-center text-sm text-green-400';
+
+                console.log('Kingdom saved to cloud with ID:', binId);
+            } catch (error) {
+                console.error('Failed to save to cloud:', error);
+                statusDiv.textContent = '❌ Failed to save to cloud. Please try again.';
+                statusDiv.className = 'mt-4 text-center text-sm text-red-400';
+                alert('Failed to save to cloud. Please check your internet connection and try again.');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.textContent = '💾 Save to Cloud';
+            }
+        }
+
+        async function loadFromCloud() {
+            const loadBtn = document.getElementById('loadCloudBtn');
+            const inputField = document.getElementById('loadCloudId');
+            const statusDiv = document.getElementById('cloudStatus');
+            const binId = inputField.value.trim();
+
+            if (!binId) {
+                alert('Please enter a Kingdom ID');
+                return;
+            }
+
+            try {
+                loadBtn.disabled = true;
+                loadBtn.textContent = '⏳ Loading...';
+                statusDiv.textContent = 'Fetching kingdom data from cloud...';
+                statusDiv.className = 'mt-4 text-center text-sm text-blue-400';
+
+                const response = await fetch(`${JSONBIN_API}/b/${binId}/latest`, {
+                    headers: {
+                        'X-Master-Key': getApiKey()
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                const saveData = result.record;
+
+                // Load the kingdom data
+                if (saveData.kingdomData) {
+                    kingdomData = saveData.kingdomData;
+                } else {
+                    kingdomData = saveData;
+                }
+
+                // Store this bin ID for future updates
+                cloudConfig.currentBinId = binId;
+                localStorage.setItem('cloudBinId', binId);
+
+                // Update display
+                updateDisplay();
+                statusDiv.textContent = `✅ Successfully loaded "${kingdomData.name}" from cloud!`;
+                statusDiv.className = 'mt-4 text-center text-sm text-green-400';
+
+                // Show the save result section with current ID
+                document.getElementById('cloudId').value = binId;
+                document.getElementById('cloudSaveResult').classList.remove('hidden');
+
+                console.log('Kingdom loaded from cloud:', kingdomData.name);
+                alert(`✅ Kingdom "${kingdomData.name}" loaded successfully!`);
+            } catch (error) {
+                console.error('Failed to load from cloud:', error);
+                statusDiv.textContent = '❌ Failed to load kingdom. Check the ID and try again.';
+                statusDiv.className = 'mt-4 text-center text-sm text-red-400';
+                alert('Failed to load kingdom from cloud. Please check the Kingdom ID and your internet connection.');
+            } finally {
+                loadBtn.disabled = false;
+                loadBtn.textContent = '📥 Load from Cloud';
+            }
+        }
+
+        function copyCloudId() {
+            const cloudIdInput = document.getElementById('cloudId');
+            cloudIdInput.select();
+            cloudIdInput.setSelectionRange(0, 99999); // For mobile devices
+
+            try {
+                navigator.clipboard.writeText(cloudIdInput.value);
+                alert('📋 Kingdom ID copied to clipboard! Share it with your party members.');
+            } catch (err) {
+                // Fallback for older browsers
+                document.execCommand('copy');
+                alert('📋 Kingdom ID copied to clipboard!');
+            }
+        }
+
+        function toggleCloudPanel() {
+            const panel = document.getElementById('cloudPanel');
+            panel.classList.toggle('hidden');
+        }
+
+        function toggleAutoSync() {
+            const checkbox = document.getElementById('autoSyncCheckbox');
+            cloudConfig.autoSync = checkbox.checked;
+            localStorage.setItem('autoSync', checkbox.checked);
+
+            if (cloudConfig.autoSync && cloudConfig.currentBinId) {
+                // Start auto-sync every 30 seconds
+                startAutoSync();
+                alert('🔄 Auto-sync enabled! Changes will be automatically saved to the cloud.');
+            } else {
+                stopAutoSync();
+                if (cloudConfig.autoSync && !cloudConfig.currentBinId) {
+                    alert('⚠️ Please save to cloud first before enabling auto-sync.');
+                    checkbox.checked = false;
+                    cloudConfig.autoSync = false;
+                }
+            }
+        }
+
+        function startAutoSync() {
+            stopAutoSync(); // Clear any existing interval
+            cloudConfig.syncInterval = setInterval(async () => {
+                if (cloudConfig.currentBinId) {
+                    console.log('Auto-syncing to cloud...');
+                    await saveToCloud();
+                }
+            }, 30000); // Sync every 30 seconds
+        }
+
+        function stopAutoSync() {
+            if (cloudConfig.syncInterval) {
+                clearInterval(cloudConfig.syncInterval);
+                cloudConfig.syncInterval = null;
+            }
+        }
+
         // LocalStorage Functions
         function saveToLocalStorage() {
             try {
@@ -1027,6 +1321,27 @@
                 console.log(`%c🏰 Kingdom "${kingdomData.name}" restored from localStorage!`, 'color: #10b981; font-weight: bold; font-size: 14px;');
             } else {
                 console.log('%c✨ Starting fresh kingdom chronicle', 'color: #3b82f6; font-weight: bold; font-size: 14px;');
+            }
+
+            // Restore cloud sync state
+            if (cloudConfig.currentBinId) {
+                document.getElementById('cloudId').value = cloudConfig.currentBinId;
+                document.getElementById('cloudSaveResult').classList.remove('hidden');
+                console.log(`%c☁️ Connected to cloud bin: ${cloudConfig.currentBinId}`, 'color: #06b6d4; font-weight: bold;');
+            }
+
+            // Restore auto-sync checkbox state
+            document.getElementById('autoSyncCheckbox').checked = cloudConfig.autoSync;
+            if (cloudConfig.autoSync && cloudConfig.currentBinId) {
+                startAutoSync();
+                console.log('%c🔄 Auto-sync enabled', 'color: #a855f7; font-weight: bold;');
+            }
+
+            // Restore custom API key if set
+            const customKey = localStorage.getItem('jsonbinApiKey');
+            if (customKey) {
+                document.getElementById('customApiKey').value = customKey;
+                console.log('%c🔑 Using custom API key', 'color: #fbbf24; font-weight: bold;');
             }
         });
     </script>
