@@ -641,16 +641,29 @@
         </div>
     </main>
 
-    <!-- Floating Save Orb -->
-    <div class="fixed bottom-8 right-8">
-        <button onclick="saveKingdom()" class="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-white p-6 rounded-full shadow-2xl transition-all transform hover:scale-110 animate-float" title="Preserve Kingdom Chronicle">
+    <!-- Floating Action Buttons -->
+    <div class="fixed bottom-8 right-8 flex flex-col gap-4">
+        <button onclick="saveKingdom()" class="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-white p-6 rounded-full shadow-2xl transition-all transform hover:scale-110 animate-float" title="Export Kingdom Chronicle">
             <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
                 <polyline stroke="currentColor" fill="none" stroke-width="2" points="17,21 17,13 7,13 7,21"/>
                 <polyline stroke="currentColor" fill="none" stroke-width="2" points="7,3 7,8 15,8"/>
             </svg>
         </button>
+        <button onclick="document.getElementById('loadFileInput').click()" class="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 text-white p-6 rounded-full shadow-2xl transition-all transform hover:scale-110 animate-float" title="Load Kingdom Chronicle">
+            <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+            </svg>
+        </button>
+        <button onclick="resetKingdom()" class="bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-400 hover:to-pink-500 text-white p-6 rounded-full shadow-2xl transition-all transform hover:scale-110" title="Reset Kingdom">
+            <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M4 12a8 8 0 018-8V0l4 4-4 4V4a6 6 0 00-6 6H4zm16 0a8 8 0 01-8 8v4l-4-4 4-4v4a6 6 0 006-6h2z"/>
+            </svg>
+        </button>
     </div>
+
+    <!-- Hidden file input for loading -->
+    <input type="file" id="loadFileInput" accept="application/json,.json" style="display: none;" onchange="loadFromFile(event)">
 
     <script>
         // Kingdom data with corrected values from spreadsheet
@@ -702,11 +715,127 @@
 
         function getControlDC() {
             // Corrected calculation to match spreadsheet value of 17
-            const sizeModifier = kingdomData.size >= 25 ? 3 : 
-                                kingdomData.size >= 11 ? 2 : 
+            const sizeModifier = kingdomData.size >= 25 ? 3 :
+                                kingdomData.size >= 11 ? 2 :
                                 kingdomData.size >= 1 ? 1 : 0;
             const ruinPenalty = getRuinPenalties();
             return 10 + kingdomData.level + sizeModifier + ruinPenalty;
+        }
+
+        // LocalStorage Functions
+        function saveToLocalStorage() {
+            try {
+                const saveData = {
+                    kingdomData,
+                    timestamp: new Date().toISOString(),
+                    version: '1.0'
+                };
+                localStorage.setItem('pathfinderKingdom', JSON.stringify(saveData));
+                console.log('Kingdom data auto-saved to localStorage');
+                return true;
+            } catch (error) {
+                console.error('Failed to save to localStorage:', error);
+                return false;
+            }
+        }
+
+        function loadFromLocalStorage() {
+            try {
+                const saved = localStorage.getItem('pathfinderKingdom');
+                if (saved) {
+                    const saveData = JSON.parse(saved);
+
+                    // Validate the data has the expected structure
+                    if (saveData.kingdomData) {
+                        kingdomData = saveData.kingdomData;
+                        console.log('Kingdom data loaded from localStorage');
+                        console.log('Last saved:', saveData.timestamp);
+                        return true;
+                    }
+                }
+                console.log('No saved kingdom found in localStorage');
+                return false;
+            } catch (error) {
+                console.error('Failed to load from localStorage:', error);
+                return false;
+            }
+        }
+
+        function loadFromFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const saveData = JSON.parse(e.target.result);
+
+                    // Support both new format with wrapper and old format with direct kingdomData
+                    if (saveData.kingdomData) {
+                        kingdomData = saveData.kingdomData;
+                    } else {
+                        kingdomData = saveData;
+                    }
+
+                    updateDisplay();
+                    saveToLocalStorage(); // Auto-save the loaded data
+                    alert(`📜 Kingdom "${kingdomData.name}" has been successfully restored!`);
+                } catch (error) {
+                    console.error('Failed to load kingdom file:', error);
+                    alert('❌ Failed to load kingdom file. Please ensure it is a valid JSON file.');
+                }
+            };
+            reader.readAsText(file);
+
+            // Reset the file input so the same file can be loaded again
+            event.target.value = '';
+        }
+
+        function resetKingdom() {
+            if (confirm('⚠️ Are you sure you want to reset your kingdom? This will restore the default kingdom data and cannot be undone!')) {
+                if (confirm('🔥 This is your final warning! All current progress will be lost. Continue?')) {
+                    // Clear localStorage
+                    localStorage.removeItem('pathfinderKingdom');
+
+                    // Reset to default values
+                    kingdomData = {
+                        name: "Nauthgard",
+                        capital: "Lakewatch",
+                        level: 3,
+                        size: 12,
+                        xp: 186,
+                        fame: 0,
+                        abilityScores: {
+                            culture: 12,
+                            economy: 14,
+                            loyalty: 14,
+                            stability: 14
+                        },
+                        commodities: {
+                            food: 1,
+                            lumber: 1,
+                            luxuries: 3,
+                            ore: 2,
+                            stone: 1
+                        },
+                        ruin: {
+                            corruption: 0,
+                            crime: 2,
+                            decay: 0,
+                            strife: 1
+                        },
+                        currentTurn: {
+                            month: "Lamashan",
+                            year: 4708,
+                            phase: "Upkeep"
+                        }
+                    };
+
+                    updateDisplay();
+                    saveToLocalStorage();
+                    alert('✨ Kingdom has been reset to default values!');
+                }
+            }
         }
 
         function updateDisplay() {
@@ -757,6 +886,9 @@
             
             // Turn tracker food display
             document.getElementById('currentFood').textContent = kingdomData.commodities.food;
+
+            // Auto-save to localStorage after every update
+            saveToLocalStorage();
         }
 
         // Tab switching
@@ -886,8 +1018,17 @@
             alert('📜 Your kingdom\'s chronicle has been preserved for posterity!');
         }
 
-        // Initialize
-        updateDisplay();
+        // Initialize - Load from localStorage if available, then update display
+        window.addEventListener('DOMContentLoaded', function() {
+            const loaded = loadFromLocalStorage();
+            updateDisplay();
+
+            if (loaded) {
+                console.log(`%c🏰 Kingdom "${kingdomData.name}" restored from localStorage!`, 'color: #10b981; font-weight: bold; font-size: 14px;');
+            } else {
+                console.log('%c✨ Starting fresh kingdom chronicle', 'color: #3b82f6; font-weight: bold; font-size: 14px;');
+            }
+        });
     </script>
 </body>
 </html>
