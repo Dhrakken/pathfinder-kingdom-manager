@@ -479,12 +479,27 @@
         <div id="turns" class="tab-content space-y-8">
             <div class="glass-morphism rounded-2xl p-8">
                 <div class="flex items-center justify-between mb-8">
-                    <h2 class="font-fantasy text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                        📅 Turn: <span id="currentMonth">Lamashan</span> <span id="currentYear">4708</span>
-                    </h2>
+                    <div>
+                        <h2 class="font-fantasy text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                            📅 Turn: <span id="currentMonth">Lamashan</span> <span id="currentYear">4708</span>
+                        </h2>
+                        <div class="mt-3 grid grid-cols-2 gap-4 max-w-md">
+                            <div class="text-sm">
+                                <span class="text-gray-400">Unrest:</span>
+                                <span class="text-yellow-400 font-bold ml-2" id="unrestDisplay">0</span>
+                                <span class="text-red-400 ml-1" id="unrestPenaltyDisplay"></span>
+                            </div>
+                            <div class="text-sm">
+                                <span class="text-gray-400">Resource Points:</span>
+                                <span class="text-cyan-400 font-bold ml-2" id="rpDisplay">0</span>
+                            </div>
+                        </div>
+                    </div>
                     <div class="flex items-center space-x-4">
-                        <span class="text-gray-300 font-medium">Current Phase:</span>
-                        <div class="bg-gradient-to-r from-blue-500 to-purple-600 px-6 py-3 rounded-full font-bold" id="currentPhase">Upkeep</div>
+                        <div class="text-right">
+                            <span class="text-gray-300 font-medium block mb-2">Current Phase:</span>
+                            <div class="bg-gradient-to-r from-blue-500 to-purple-600 px-6 py-3 rounded-full font-bold" id="currentPhase">Upkeep</div>
+                        </div>
                     </div>
                 </div>
 
@@ -511,21 +526,81 @@
                     </div>
                 </div>
 
-                <!-- Upkeep Section -->
-                <div id="upkeepPhase" class="space-y-6">
-                    <div class="bg-gradient-to-r from-yellow-600/20 to-orange-600/20 border border-yellow-500/30 rounded-2xl p-8">
-                        <h4 class="font-fantasy text-2xl font-bold text-yellow-400 mb-4 flex items-center">
-                            ⚠️ Consumption Ritual
-                        </h4>
-                        <p class="text-xl text-yellow-200 mb-6">Your kingdom requires <span id="totalConsumption" class="font-bold text-yellow-400">2</span> units of Food this turn. You currently possess <span id="currentFood" class="font-bold text-yellow-400">1</span> units.</p>
-                        <div class="bg-red-900/30 border border-red-500/50 rounded-xl p-6">
-                            <span class="text-red-300 font-medium text-lg">🚨 Insufficient sustenance! This deficit shall manifest as Strife among your people.</span>
+                <!-- Phase-Specific Content -->
+                <div id="phaseContent" class="space-y-6">
+                    <!-- Upkeep Phase -->
+                    <div id="upkeepPhaseContent" class="space-y-6">
+                        <div class="bg-gradient-to-r from-blue-600/20 to-indigo-600/20 border border-blue-400/30 rounded-2xl p-8">
+                            <h4 class="font-fantasy text-2xl font-bold text-blue-400 mb-4">📜 Upkeep Phase</h4>
+                            <ul class="space-y-2 text-gray-300">
+                                <li>✅ Step 1: Gain Fame (+1 Fame/Infamy)</li>
+                                <li>✅ Step 2: Adjust Unrest (check overcrowding, war, events)</li>
+                                <li>✅ Step 3: Roll Resource Dice (d<span id="resourceDieType">6</span>)</li>
+                                <li>✅ Step 4: Pay Consumption (<span id="totalConsumption">2</span> Food required)</li>
+                            </ul>
+                        </div>
+                        <button onclick="completeUpkeep()" class="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 text-white px-8 py-6 rounded-2xl font-bold text-xl transition-all transform hover:scale-105 shadow-2xl">
+                            ⚡ Complete Upkeep Phase
+                        </button>
+                    </div>
+
+                    <!-- Commerce Phase -->
+                    <div id="commercePhaseContent" class="space-y-6 hidden">
+                        <div class="bg-gradient-to-r from-emerald-600/20 to-green-600/20 border border-emerald-400/30 rounded-2xl p-8">
+                            <h4 class="font-fantasy text-2xl font-bold text-emerald-400 mb-4">💰 Commerce Phase</h4>
+                            <p class="text-gray-300 mb-4">Choose to either collect taxes or skip to reduce unrest:</p>
+                            <div class="grid grid-cols-2 gap-4">
+                                <button onclick="completeCommerce(true)" class="bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500 text-white px-6 py-4 rounded-xl font-bold transition-all">
+                                    💰 Collect Taxes<br><span class="text-sm font-normal">Economy check for bonus</span>
+                                </button>
+                                <button onclick="completeCommerce(false)" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-6 py-4 rounded-xl font-bold transition-all">
+                                    ✨ Skip Taxes<br><span class="text-sm font-normal">DC 11 to reduce Unrest</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
-                    
-                    <button onclick="payUpkeep()" class="w-full bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-white px-8 py-6 rounded-2xl font-bold text-xl transition-all transform hover:scale-105 shadow-2xl">
-                        💰 Complete Upkeep Ritual
-                    </button>
+
+                    <!-- Activity Phase -->
+                    <div id="activityPhaseContent" class="space-y-6 hidden">
+                        <div class="bg-gradient-to-r from-purple-600/20 to-pink-600/20 border border-purple-400/30 rounded-2xl p-8">
+                            <h4 class="font-fantasy text-2xl font-bold text-purple-400 mb-4">🎯 Activity Phase</h4>
+                            <div class="grid grid-cols-3 gap-4 mb-4">
+                                <div class="text-center">
+                                    <div class="text-2xl font-bold text-blue-400" id="leadershipCount">0/6</div>
+                                    <div class="text-sm text-gray-400">Leadership</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-2xl font-bold text-green-400" id="regionCount">0/3</div>
+                                    <div class="text-sm text-gray-400">Region</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-2xl font-bold text-yellow-400" id="civicCount">0/1</div>
+                                    <div class="text-sm text-gray-400">Civic</div>
+                                </div>
+                            </div>
+                            <p class="text-gray-300 text-sm">Perform kingdom activities below. When done, advance to Event phase.</p>
+                        </div>
+                        <button onclick="completeActivity()" class="w-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-400 hover:to-pink-500 text-white px-8 py-6 rounded-2xl font-bold text-xl transition-all transform hover:scale-105 shadow-2xl">
+                            ⚡ Complete Activity Phase
+                        </button>
+                    </div>
+
+                    <!-- Event Phase -->
+                    <div id="eventPhaseContent" class="space-y-6 hidden">
+                        <div class="bg-gradient-to-r from-red-600/20 to-orange-600/20 border border-red-400/30 rounded-2xl p-8">
+                            <h4 class="font-fantasy text-2xl font-bold text-red-400 mb-4">🎲 Event Phase</h4>
+                            <p class="text-gray-300 mb-4">Roll for random kingdom events and resolve them.</p>
+                        </div>
+                        <button onclick="completeEvent()" class="w-full bg-gradient-to-r from-red-500 to-orange-600 hover:from-red-400 hover:to-orange-500 text-white px-8 py-6 rounded-2xl font-bold text-xl transition-all transform hover:scale-105 shadow-2xl">
+                            ⚡ Complete Event Phase & End Turn
+                        </button>
+                    </div>
+
+                    <!-- Phase Log -->
+                    <div id="phaseLog" class="bg-gray-900/50 border border-gray-700 rounded-xl p-6 max-h-96 overflow-y-auto hidden">
+                        <h5 class="font-bold text-lg mb-3 text-cyan-400">📋 Phase Log</h5>
+                        <div id="phaseLogContent" class="space-y-2 text-sm text-gray-300"></div>
+                    </div>
                 </div>
 
                 <!-- Activity Selection -->
@@ -743,11 +818,17 @@
         // Kingdom data with corrected values from spreadsheet
         let kingdomData = {
             name: "Nauthgard",
-            capital: "Lakewatch", 
+            capital: "Lakewatch",
             level: 3,
             size: 12,
             xp: 186,
             fame: 0,
+            unrest: 0,
+            resourcePoints: 0,
+            resourceDice: {
+                number: 7, // level + 4
+                type: 6    // d6 for Province size
+            },
             abilityScores: {
                 culture: 12,
                 economy: 14,
@@ -770,7 +851,18 @@
             currentTurn: {
                 month: "Lamashan",
                 year: 4708,
-                phase: "Upkeep"
+                phase: "Upkeep",
+                step: 1
+            },
+            phaseData: {
+                upkeepComplete: false,
+                commerceComplete: false,
+                activitiesPerformed: {
+                    leadership: 0,
+                    region: 0,
+                    civic: 0
+                },
+                economyBonus: 0
             }
         };
 
@@ -794,6 +886,253 @@
                                 kingdomData.size >= 1 ? 1 : 0;
             const ruinPenalty = getRuinPenalties();
             return 10 + kingdomData.level + sizeModifier + ruinPenalty;
+        }
+
+        function getUnrestPenalty() {
+            if (kingdomData.unrest >= 10) return -3;
+            if (kingdomData.unrest >= 5) return -2;
+            if (kingdomData.unrest >= 1) return -1;
+            return 0;
+        }
+
+        function getConsumption() {
+            // Simplified: 1 settlement consuming 2 food - adjust based on actual settlements
+            // TODO: Calculate from actual settlement data
+            return 2;
+        }
+
+        // Month names for Golarion calendar
+        const monthNames = [
+            "Abadius", "Calistril", "Pharast", "Gozran", "Desnus", "Sarenith",
+            "Erastus", "Arodus", "Rova", "Lamashan", "Neth", "Kuthona"
+        ];
+
+        function advanceMonth() {
+            const currentIndex = monthNames.indexOf(kingdomData.currentTurn.month);
+            if (currentIndex === 11) {
+                kingdomData.currentTurn.month = monthNames[0];
+                kingdomData.currentTurn.year++;
+            } else {
+                kingdomData.currentTurn.month = monthNames[currentIndex + 1];
+            }
+        }
+
+        // Turn Phase Functions
+        function rollDice(num, sides) {
+            let total = 0;
+            for (let i = 0; i < num; i++) {
+                total += Math.floor(Math.random() * sides) + 1;
+            }
+            return total;
+        }
+
+        function performUpkeepPhase() {
+            let log = [];
+
+            // Step 1: Gain Fame
+            kingdomData.fame += 1;
+            log.push(`📜 Gained 1 Fame (Total: ${kingdomData.fame})`);
+
+            // Step 2: Adjust Unrest
+            let unrestChange = 0;
+            // TODO: Check for overcrowded settlements, war status, etc.
+            if (unrestChange !== 0) {
+                kingdomData.unrest += unrestChange;
+                log.push(`⚠️ Unrest ${unrestChange > 0 ? 'increased' : 'decreased'} by ${Math.abs(unrestChange)} (Total: ${kingdomData.unrest})`);
+            } else {
+                log.push(`✅ No unrest changes this turn`);
+            }
+
+            // Check for high unrest penalties
+            if (kingdomData.unrest >= 10) {
+                const ruinGain = rollDice(1, 10);
+                log.push(`🚨 CRITICAL: Unrest at ${kingdomData.unrest}! Gained ${ruinGain} Ruin points to distribute`);
+                // For now, add to Strife
+                kingdomData.ruin.strife += ruinGain;
+
+                // Flat check for losing hex
+                const hexCheck = rollDice(1, 20);
+                if (hexCheck < 11) {
+                    kingdomData.size = Math.max(1, kingdomData.size - 1);
+                    log.push(`💥 Lost 1 hex due to high unrest! (Size now ${kingdomData.size})`);
+                }
+            }
+
+            // Step 3: Roll Resource Dice
+            const rpRoll = rollDice(kingdomData.resourceDice.number, kingdomData.resourceDice.type);
+            kingdomData.resourcePoints = rpRoll;
+            log.push(`💎 Rolled ${kingdomData.resourceDice.number}d${kingdomData.resourceDice.type} for Resource Points: ${rpRoll} RP`);
+
+            // Step 4: Pay Consumption
+            const consumption = getConsumption();
+            log.push(`🌾 Consumption required: ${consumption} Food (Have: ${kingdomData.commodities.food})`);
+
+            if (kingdomData.commodities.food >= consumption) {
+                kingdomData.commodities.food -= consumption;
+                log.push(`✅ Successfully paid ${consumption} Food`);
+            } else {
+                const shortage = consumption - kingdomData.commodities.food;
+                kingdomData.commodities.food = 0;
+                kingdomData.ruin.strife += shortage;
+                log.push(`⚠️ Food shortage! Gained ${shortage} Strife (Total Strife: ${kingdomData.ruin.strife})`);
+            }
+
+            kingdomData.phaseData.upkeepComplete = true;
+
+            return log;
+        }
+
+        function performCommercePhase(collectTaxes = false) {
+            let log = [];
+
+            if (collectTaxes) {
+                const roll = rollDice(1, 20);
+                const modifier = getAbilityModifier(kingdomData.abilityScores.economy);
+                const total = roll + modifier;
+                const dc = getControlDC();
+
+                log.push(`💰 Collect Taxes: Rolled ${roll} + ${modifier} = ${total} vs DC ${dc}`);
+
+                if (total >= dc + 10) {
+                    kingdomData.phaseData.economyBonus = 2;
+                    log.push(`🎉 Critical Success! +2 bonus to Economy checks this turn`);
+                } else if (total >= dc) {
+                    kingdomData.phaseData.economyBonus = 1;
+                    log.push(`✅ Success! +1 bonus to Economy checks this turn`);
+                } else {
+                    log.push(`❌ Failed to collect taxes effectively`);
+                }
+            } else {
+                const flatCheck = rollDice(1, 20);
+                if (flatCheck >= 11) {
+                    kingdomData.unrest = Math.max(0, kingdomData.unrest - 1);
+                    log.push(`✨ Skipped taxes, reduced Unrest by 1 (Total: ${kingdomData.unrest})`);
+                } else {
+                    log.push(`➖ Skipped taxes, no unrest reduction`);
+                }
+            }
+
+            kingdomData.phaseData.commerceComplete = true;
+
+            return log;
+        }
+
+        function performEventPhase() {
+            let log = [];
+
+            // Flat check to see if random event occurs
+            const eventCheck = rollDice(1, 20);
+            const eventThreshold = 6; // Adjust based on your campaign
+
+            if (eventCheck >= eventThreshold) {
+                log.push(`🎲 Random event check: ${eventCheck} - Event occurred!`);
+                log.push(`📖 GM should consult the random events table`);
+                // TODO: Implement random event table
+            } else {
+                log.push(`🎲 Random event check: ${eventCheck} - No event this turn`);
+            }
+
+            return log;
+        }
+
+        function advanceToNextPhase() {
+            const phaseOrder = ['Upkeep', 'Commerce', 'Activity', 'Event'];
+            const currentPhaseIndex = phaseOrder.indexOf(kingdomData.currentTurn.phase);
+
+            if (currentPhaseIndex === 3) {
+                // End of turn, start new month
+                advanceMonth();
+                kingdomData.currentTurn.phase = 'Upkeep';
+                kingdomData.currentTurn.step = 1;
+
+                // Convert unused RP to XP
+                if (kingdomData.resourcePoints > 0) {
+                    kingdomData.xp += kingdomData.resourcePoints;
+                }
+
+                // Reset phase data
+                kingdomData.phaseData = {
+                    upkeepComplete: false,
+                    commerceComplete: false,
+                    activitiesPerformed: {
+                        leadership: 0,
+                        region: 0,
+                        civic: 0
+                    },
+                    economyBonus: 0
+                };
+                kingdomData.resourcePoints = 0;
+
+                updateDisplay();
+                alert(`🗓️ New Turn! Welcome to ${kingdomData.currentTurn.month} ${kingdomData.currentTurn.year}`);
+            } else {
+                kingdomData.currentTurn.phase = phaseOrder[currentPhaseIndex + 1];
+                kingdomData.currentTurn.step = 1;
+                updateDisplay();
+            }
+        }
+
+        function showPhaseLog(messages) {
+            const logDiv = document.getElementById('phaseLog');
+            const logContent = document.getElementById('phaseLogContent');
+
+            logContent.innerHTML = messages.map(msg => `<div class="py-1">${msg}</div>`).join('');
+            logDiv.classList.remove('hidden');
+        }
+
+        function completeUpkeep() {
+            const log = performUpkeepPhase();
+            showPhaseLog(log);
+            updateDisplay();
+            setTimeout(() => {
+                advanceToNextPhase();
+            }, 2000);
+        }
+
+        function completeCommerce(collectTaxes) {
+            const log = performCommercePhase(collectTaxes);
+            showPhaseLog(log);
+            updateDisplay();
+            setTimeout(() => {
+                advanceToNextPhase();
+            }, 2000);
+        }
+
+        function completeActivity() {
+            showPhaseLog(['✅ Activity phase complete. Advancing to Event phase...']);
+            updateDisplay();
+            setTimeout(() => {
+                advanceToNextPhase();
+            }, 1000);
+        }
+
+        function completeEvent() {
+            const log = performEventPhase();
+            showPhaseLog(log);
+            updateDisplay();
+            setTimeout(() => {
+                advanceToNextPhase();
+            }, 2000);
+        }
+
+        function updatePhaseDisplay() {
+            // Hide all phase content
+            document.getElementById('upkeepPhaseContent').classList.add('hidden');
+            document.getElementById('commercePhaseContent').classList.add('hidden');
+            document.getElementById('activityPhaseContent').classList.add('hidden');
+            document.getElementById('eventPhaseContent').classList.add('hidden');
+
+            // Show current phase content
+            const phase = kingdomData.currentTurn.phase;
+            if (phase === 'Upkeep') {
+                document.getElementById('upkeepPhaseContent').classList.remove('hidden');
+            } else if (phase === 'Commerce') {
+                document.getElementById('commercePhaseContent').classList.remove('hidden');
+            } else if (phase === 'Activity') {
+                document.getElementById('activityPhaseContent').classList.remove('hidden');
+            } else if (phase === 'Event') {
+                document.getElementById('eventPhaseContent').classList.remove('hidden');
+            }
         }
 
         // Cloud Storage Configuration
@@ -1099,6 +1438,12 @@
                         size: 12,
                         xp: 186,
                         fame: 0,
+                        unrest: 0,
+                        resourcePoints: 0,
+                        resourceDice: {
+                            number: 7,
+                            type: 6
+                        },
                         abilityScores: {
                             culture: 12,
                             economy: 14,
@@ -1121,7 +1466,18 @@
                         currentTurn: {
                             month: "Lamashan",
                             year: 4708,
-                            phase: "Upkeep"
+                            phase: "Upkeep",
+                            step: 1
+                        },
+                        phaseData: {
+                            upkeepComplete: false,
+                            commerceComplete: false,
+                            activitiesPerformed: {
+                                leadership: 0,
+                                region: 0,
+                                civic: 0
+                            },
+                            economyBonus: 0
                         }
                     };
 
@@ -1181,6 +1537,30 @@
             // Turn tracker food display
             document.getElementById('currentFood').textContent = kingdomData.commodities.food;
 
+            // New fields - check if elements exist before updating
+            if (document.getElementById('unrestDisplay')) {
+                document.getElementById('unrestDisplay').textContent = kingdomData.unrest || 0;
+                const penalty = getUnrestPenalty();
+                document.getElementById('unrestPenaltyDisplay').textContent = penalty < 0 ? `(${penalty})` : '';
+            }
+
+            if (document.getElementById('rpDisplay')) {
+                document.getElementById('rpDisplay').textContent = kingdomData.resourcePoints || 0;
+            }
+
+            if (document.getElementById('resourceDieType')) {
+                document.getElementById('resourceDieType').textContent = kingdomData.resourceDice?.type || 6;
+            }
+
+            if (document.getElementById('totalConsumption')) {
+                document.getElementById('totalConsumption').textContent = getConsumption();
+            }
+
+            // Update phase display
+            if (typeof updatePhaseDisplay === 'function') {
+                updatePhaseDisplay();
+            }
+
             // Auto-save to localStorage after every update
             saveToLocalStorage();
         }
@@ -1217,21 +1597,6 @@
                 alert(`🎉 Your kingdom has ascended to level ${kingdomData.level}! The realm grows in power and influence!`);
                 updateDisplay();
             }
-        }
-
-        // Pay upkeep
-        function payUpkeep() {
-            const totalConsumption = 2; // This should be calculated dynamically
-            if (kingdomData.commodities.food >= totalConsumption) {
-                kingdomData.commodities.food -= totalConsumption;
-                alert(`💰 Successfully paid ${totalConsumption} Food for monthly upkeep.`);
-            } else {
-                const shortage = totalConsumption - kingdomData.commodities.food;
-                kingdomData.commodities.food = 0;
-                kingdomData.ruin.strife += shortage;
-                alert(`⚠️ Insufficient food reserves! Your people grow restless. Gained ${shortage} Strife due to food shortage.`);
-            }
-            updateDisplay();
         }
 
         // Perform activity
