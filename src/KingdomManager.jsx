@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { 
   Crown, Users, Coins, TreePine, Gem, Wheat, Mountain, Hammer,
   Shield, BookOpen, Sword, Calendar, Plus, Save, Download, Upload,
-  Home, Grid3X3, Map, History, Settings, ChevronRight, Dice6,
+  Home, LayoutDashboard, Map, History, Settings, ChevronRight, Dice6,
   AlertTriangle, CheckCircle, XCircle, TrendingUp, TrendingDown
 } from 'lucide-react';
 import { 
@@ -308,7 +308,7 @@ export default function KingdomManager() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {ABILITIES.map(ability => (
+        {['Culture', 'Economy', 'Loyalty', 'Stability'].map(ability => (
           <div key={ability} className="glass-card p-4 text-center">
             <div className="text-xs text-gray-400 uppercase tracking-wider">{ability}</div>
             <div className="text-2xl font-bold text-yellow-400">{state.abilities[ability]}</div>
@@ -351,7 +351,7 @@ export default function KingdomManager() {
         </div>
         <div className="glass-card p-4">
           <h3 className="text-yellow-400 font-semibold mb-3">Ruin (Total: {totalRuin})</h3>
-          <div className="grid grid-cols-4 gap-2">{RUIN_TYPES.map(type => (<div key={type} className="text-center"><div className="text-xs text-gray-400">{type}</div><div className="text-lg font-bold">{state.ruin[type]}</div></div>))}</div>
+          <div className="grid grid-cols-4 gap-2">{['Corruption', 'Crime', 'Decay', 'Strife'].map(type => (<div key={type} className="text-center"><div className="text-xs text-gray-400">{type}</div><div className="text-lg font-bold">{state.ruin[type]}</div></div>))}</div>
         </div>
       </div>
 
@@ -434,7 +434,7 @@ export default function KingdomManager() {
   );
 
   const tabs = [
-    { id: 'dashboard', label: 'Dashboard', icon: Grid3X3 },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'leadership', label: 'Leadership', icon: Users },
     { id: 'activities', label: 'Activities', icon: Hammer },
     { id: 'settlements', label: 'Settlements', icon: Home },
