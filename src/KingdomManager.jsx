@@ -16,6 +16,7 @@ import {
   COMMERCE_ACTIVITIES, getActivityById 
 } from './data/activities.js';
 import HexMap from './components/HexMap.jsx';
+import StolenLandsMap from './components/StolenLandsMap.jsx';
 import { HEX_STATUS, parseImportedMapData } from './utils/hexUtils.js';
 
 // ============================================
@@ -510,14 +511,12 @@ export default function KingdomManager() {
           {Object.values(state.hexMap).filter(h => h.status === 'claimed').length} hexes claimed
         </div>
       </div>
-      <div className="h-[600px]">
-        <HexMap
+      <div className="h-[700px]">
+        <StolenLandsMap
           hexes={state.hexMap}
           onHexUpdate={handleHexUpdate}
           kingdomName={state.kingdom.name}
           kingdomColor="#3333f9"
-          rows={10}
-          cols={28}
         />
       </div>
     </div>
