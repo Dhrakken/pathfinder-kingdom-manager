@@ -15,6 +15,8 @@ import {
   LEADERSHIP_ACTIVITIES, REGION_ACTIVITIES, CIVIC_ACTIVITIES, 
   COMMERCE_ACTIVITIES, getActivityById 
 } from './data/activities.js';
+import HexMap from './components/HexMap.jsx';
+import { HEX_STATUS, parseImportedMapData } from './utils/hexUtils.js';
 
 // ============================================
 // PHASES
@@ -122,6 +124,55 @@ const createInitialState = () => {
     },
     log: [],
     history: [],
+    // Hex map data - Nauthgard's claimed territory
+    hexMap: {
+      // Claimed hexes (12 total)
+      'c19': { coord: 'c19', status: 'claimed', terrain: 'plains', faction: '1', workSite: null, settlement: null, notes: 'Gold Mine nearby' },
+      'c20': { coord: 'c20', status: 'claimed', terrain: 'plains', faction: '1', workSite: null, settlement: null, notes: '' },
+      'd18': { coord: 'd18', status: 'claimed', terrain: 'forest', faction: '1', workSite: null, settlement: null, notes: 'Corrupted Temple - Druids nearby' },
+      'd19': { coord: 'd19', status: 'claimed', terrain: 'hills', faction: '1', workSite: 'mine', settlement: null, notes: 'Mine worksite' },
+      'd20': { coord: 'd20', status: 'claimed', terrain: 'forest', faction: '1', workSite: 'lumber', settlement: null, notes: 'Lumber camp' },
+      'd21': { coord: 'd21', status: 'claimed', terrain: 'hills', faction: '1', workSite: 'mine', settlement: null, notes: 'Ore mine - 2 ore per turn' },
+      'd22': { coord: 'd22', status: 'claimed', terrain: 'plains', faction: '1', workSite: null, settlement: null, notes: '' },
+      'e18': { coord: 'e18', status: 'claimed', terrain: 'plains', faction: '1', workSite: 'farm', settlement: null, notes: 'Fang Berries location' },
+      'e19': { coord: 'e19', status: 'claimed', terrain: 'plains', faction: '1', workSite: 'farm', settlement: null, notes: 'Farmland' },
+      'e20': { coord: 'e20', status: 'claimed', terrain: 'plains', faction: '1', workSite: 'quarry', settlement: null, notes: 'Quarry worksite' },
+      'f19': { coord: 'f19', status: 'claimed', terrain: 'hills', faction: '1', workSite: null, settlement: 'Lakewatch', notes: 'Capital - Fort on a hill with wooden palisades' },
+      'f20': { coord: 'f20', status: 'claimed', terrain: 'plains', faction: '1', workSite: null, settlement: null, notes: '' },
+      // Explored but unclaimed
+      'a18': { coord: 'a18', status: 'explored', terrain: 'plains', faction: null, workSite: null, settlement: null, notes: '' },
+      'a19': { coord: 'a19', status: 'explored', terrain: 'plains', faction: null, workSite: null, settlement: null, notes: '' },
+      'a20': { coord: 'a20', status: 'explored', terrain: 'plains', faction: null, workSite: null, settlement: null, notes: '' },
+      'a21': { coord: 'a21', status: 'explored', terrain: 'plains', faction: null, workSite: null, settlement: null, notes: '' },
+      'a22': { coord: 'a22', status: 'explored', terrain: 'plains', faction: null, workSite: null, settlement: null, notes: '' },
+      'a23': { coord: 'a23', status: 'explored', terrain: 'plains', faction: null, workSite: null, settlement: null, notes: '' },
+      'a24': { coord: 'a24', status: 'explored', terrain: 'plains', faction: null, workSite: null, settlement: null, notes: '' },
+      'a25': { coord: 'a25', status: 'explored', terrain: 'plains', faction: null, workSite: null, settlement: null, notes: '' },
+      'a26': { coord: 'a26', status: 'explored', terrain: 'plains', faction: null, workSite: null, settlement: null, notes: '' },
+      'a27': { coord: 'a27', status: 'explored', terrain: 'plains', faction: null, workSite: null, settlement: null, notes: '' },
+      'b18': { coord: 'b18', status: 'explored', terrain: 'forest', faction: null, workSite: null, settlement: null, notes: '' },
+      'b19': { coord: 'b19', status: 'explored', terrain: 'forest', faction: null, workSite: null, settlement: null, notes: '' },
+      'b20': { coord: 'b20', status: 'explored', terrain: 'plains', faction: null, workSite: null, settlement: null, notes: '' },
+      'b21': { coord: 'b21', status: 'explored', terrain: 'plains', faction: null, workSite: null, settlement: null, notes: '' },
+      'b22': { coord: 'b22', status: 'explored', terrain: 'plains', faction: null, workSite: null, settlement: null, notes: '' },
+      'b23': { coord: 'b23', status: 'explored', terrain: 'plains', faction: null, workSite: null, settlement: null, notes: '' },
+      'c17': { coord: 'c17', status: 'explored', terrain: 'forest', faction: null, workSite: null, settlement: null, notes: '' },
+      'c18': { coord: 'c18', status: 'explored', terrain: 'forest', faction: null, workSite: null, settlement: null, notes: '' },
+      'c21': { coord: 'c21', status: 'explored', terrain: 'plains', faction: null, workSite: null, settlement: null, notes: '' },
+      'c22': { coord: 'c22', status: 'explored', terrain: 'plains', faction: null, workSite: null, settlement: null, notes: '' },
+      'd17': { coord: 'd17', status: 'explored', terrain: 'forest', faction: null, workSite: null, settlement: null, notes: '' },
+      'd23': { coord: 'd23', status: 'explored', terrain: 'plains', faction: null, workSite: null, settlement: null, notes: '' },
+      'e17': { coord: 'e17', status: 'explored', terrain: 'forest', faction: null, workSite: null, settlement: null, notes: '' },
+      'f18': { coord: 'f18', status: 'explored', terrain: 'forest', faction: null, workSite: null, settlement: null, notes: '' },
+      'f21': { coord: 'f21', status: 'explored', terrain: 'plains', faction: null, workSite: null, settlement: null, notes: '' },
+      'g17': { coord: 'g17', status: 'explored', terrain: 'swamp', faction: null, workSite: null, settlement: null, notes: '' },
+      'g18': { coord: 'g18', status: 'explored', terrain: 'plains', faction: null, workSite: null, settlement: null, notes: '' },
+      'g19': { coord: 'g19', status: 'explored', terrain: 'plains', faction: null, workSite: null, settlement: null, notes: '' },
+      'g20': { coord: 'g20', status: 'explored', terrain: 'water', faction: null, workSite: null, settlement: null, notes: '' },
+      'h17': { coord: 'h17', status: 'explored', terrain: 'swamp', faction: null, workSite: null, settlement: null, notes: 'Hag - Elga Vernex' },
+      'h18': { coord: 'h18', status: 'explored', terrain: 'water', faction: null, workSite: null, settlement: null, notes: '' },
+      'h19': { coord: 'h19', status: 'explored', terrain: 'water', faction: null, workSite: null, settlement: null, notes: 'Candlemeer Island - haunted' },
+    },
   };
 };
 
@@ -433,8 +484,48 @@ export default function KingdomManager() {
     </div>
   );
 
+  // Handle hex updates from the map
+  const handleHexUpdate = useCallback((updatedHex) => {
+    setState(prev => ({
+      ...prev,
+      hexMap: {
+        ...prev.hexMap,
+        [updatedHex.coord]: updatedHex,
+      },
+      // Update kingdom hex count if claiming
+      kingdom: updatedHex.status === 'claimed' && prev.hexMap[updatedHex.coord]?.status !== 'claimed'
+        ? { ...prev.kingdom, hexes: prev.kingdom.hexes + 1 }
+        : prev.kingdom,
+    }));
+    addLog(`Hex ${updatedHex.coord.toUpperCase()}: ${updatedHex.status}`, 'success');
+  }, [addLog]);
+
+  const renderMap = () => (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold text-yellow-400 flex items-center gap-2">
+          <Map className="w-6 h-6" /> Kingdom Map
+        </h2>
+        <div className="text-sm text-gray-400">
+          {Object.values(state.hexMap).filter(h => h.status === 'claimed').length} hexes claimed
+        </div>
+      </div>
+      <div className="h-[600px]">
+        <HexMap
+          hexes={state.hexMap}
+          onHexUpdate={handleHexUpdate}
+          kingdomName={state.kingdom.name}
+          kingdomColor="#3333f9"
+          rows={10}
+          cols={28}
+        />
+      </div>
+    </div>
+  );
+
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'map', label: 'Map', icon: Map },
     { id: 'leadership', label: 'Leadership', icon: Users },
     { id: 'activities', label: 'Activities', icon: Hammer },
     { id: 'settlements', label: 'Settlements', icon: Home },
@@ -453,6 +544,7 @@ export default function KingdomManager() {
 
       <main className="max-w-6xl mx-auto p-4">
         {activeTab === 'dashboard' && renderDashboard()}
+        {activeTab === 'map' && renderMap()}
         {activeTab === 'leadership' && renderLeadership()}
         {activeTab === 'activities' && renderActivities()}
         {activeTab === 'settlements' && renderSettlements()}
