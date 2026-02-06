@@ -2,8 +2,8 @@ import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { 
   Home, Hammer, Wheat, Eye, Flag, Info, X, ZoomIn, ZoomOut,
   Mountain, TreePine, Tent, Store, MapPin, Building, Landmark, 
-  Skull, Fish, Droplet, Circle, TreeDeciduous, Bug, 
-  Swords, Footprints, Navigation
+  Skull, Fish, Droplet, TreeDeciduous, Sparkles, Ghost,
+  Swords, Footprints, Link2
 } from 'lucide-react';
 import { HEX_POSITIONS, MAP_WIDTH, MAP_HEIGHT, HEX_WIDTH, HEX_HEIGHT } from '../data/hexPositions.js';
 import { HEX_STATUS, WORK_SITE_TYPES, TERRAIN_TYPES } from '../utils/hexUtils.js';
@@ -34,7 +34,7 @@ const getPointyTopHexPoints = (x, y) => {
 // Icon mapping for POI markers
 const POI_ICON_MAP = {
   Tent, Store, MapPin, Building, Landmark, Skull, Fish, Droplet, 
-  Circle, TreeDeciduous, Bug, Swords, Footprints, Navigation,
+  TreeDeciduous, Sparkles, Ghost, Swords, Footprints, Link2,
   Hammer, Home, Wheat, TreePine, Mountain
 };
 
