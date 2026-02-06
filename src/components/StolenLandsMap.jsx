@@ -138,15 +138,18 @@ const HexOverlay = ({ coord, hex, position, isSelected, onClick, kingdomColor })
         </g>
       )}
       
-      {/* Coordinate label */}
+      {/* Coordinate label - CENTERED in hex (offset down if icon present) */}
       <text
         x={cx}
-        y={cy + HEX_H / 2 + 12}
+        y={(settlement || workSite || hex?.notes) ? cy + HEX_H * 0.32 : cy + 6}
         textAnchor="middle"
-        fontSize="10"
-        fill="rgba(255,255,255,0.7)"
+        fontSize="18"
+        fill="rgba(255,255,255,0.9)"
         fontWeight="bold"
-        style={{ textShadow: '1px 1px 2px black' }}
+        style={{ 
+          textShadow: '2px 2px 3px rgba(0,0,0,0.9), -1px -1px 2px rgba(0,0,0,0.7)',
+          pointerEvents: 'none'
+        }}
       >
         {coord.toUpperCase()}
       </text>
