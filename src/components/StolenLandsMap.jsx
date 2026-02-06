@@ -80,22 +80,22 @@ const HexOverlay = ({ coord, hex, position, isSelected, onClick, kingdomColor })
         className="transition-all duration-200 hover:fill-opacity-40"
       />
       
-      {/* Settlement icon */}
+      {/* Settlement icon - LARGE */}
       {settlement && (
-        <g transform={`translate(${cx - 10}, ${cy - 10})`}>
-          <circle cx="10" cy="10" r="12" fill="#2d004d" stroke="#D4AF37" strokeWidth="2" />
-          <Home x="2" y="2" size={16} stroke="#D4AF37" />
+        <g transform={`translate(${cx - 24}, ${cy - 24})`}>
+          <circle cx="24" cy="24" r="28" fill="#2d004d" stroke="#D4AF37" strokeWidth="3" />
+          <Home x="8" y="8" size={32} stroke="#D4AF37" strokeWidth={2} />
         </g>
       )}
       
-      {/* Work site icon */}
+      {/* Work site icon - LARGER */}
       {workSite && !settlement && (
-        <g transform={`translate(${cx - 8}, ${cy - 8})`}>
-          <circle cx="8" cy="8" r="10" fill="rgba(0,0,0,0.6)" />
-          {workSite === 'farm' && <Wheat x="2" y="2" size={12} stroke="#FFA500" />}
-          {workSite === 'lumber' && <TreePine x="2" y="2" size={12} stroke="#228B22" />}
-          {workSite === 'mine' && <Hammer x="2" y="2" size={12} stroke="#A0A0A0" />}
-          {workSite === 'quarry' && <Mountain x="2" y="2" size={12} stroke="#808080" />}
+        <g transform={`translate(${cx - 18}, ${cy - 18})`}>
+          <circle cx="18" cy="18" r="22" fill="rgba(0,0,0,0.7)" stroke="rgba(255,255,255,0.3)" strokeWidth="2" />
+          {workSite === 'farm' && <Wheat x="6" y="6" size={24} stroke="#FFA500" strokeWidth={2} />}
+          {workSite === 'lumber' && <TreePine x="6" y="6" size={24} stroke="#228B22" strokeWidth={2} />}
+          {workSite === 'mine' && <Hammer x="6" y="6" size={24} stroke="#A0A0A0" strokeWidth={2} />}
+          {workSite === 'quarry' && <Mountain x="6" y="6" size={24} stroke="#808080" strokeWidth={2} />}
         </g>
       )}
       
@@ -122,7 +122,7 @@ const HexInfoPanel = ({ hex, coord, onClose, onAction, kingdomName }) => {
   const workSiteInfo = hex.workSite ? WORK_SITE_TYPES[hex.workSite] : null;
   
   return (
-    <div className="absolute top-4 right-4 w-72 glass-card p-4 z-50">
+    <div className="absolute top-4 right-4 w-72 p-4 z-50 rounded-lg border border-yellow-600/30" style={{ backgroundColor: 'rgba(15, 15, 25, 0.95)' }}>
       <div className="flex justify-between items-start mb-3">
         <div>
           <h3 className="text-lg font-semibold text-yellow-400">
