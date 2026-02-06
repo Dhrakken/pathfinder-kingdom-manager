@@ -50,11 +50,14 @@ const POIMarker = ({ poi, onClick }) => {
       style={{ cursor: 'pointer' }}
       className="poi-marker"
     >
-      {/* Background circle */}
-      <circle cx="0" cy="0" r="18" fill="rgba(0,0,0,0.85)" stroke={typeInfo.color} strokeWidth="2" />
-      {/* Icon */}
-      <IconComponent x="-10" y="-10" size={20} stroke={typeInfo.color} strokeWidth={1.5} />
-      {/* Hover tooltip would need to be done differently in SVG */}
+      {/* Background circle - larger */}
+      <circle cx="0" cy="0" r="22" fill="rgba(0,0,0,0.9)" stroke={typeInfo.color} strokeWidth="3" />
+      {/* Icon - using foreignObject for proper rendering */}
+      <foreignObject x="-14" y="-14" width="28" height="28">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
+          <IconComponent size={22} color={typeInfo.color} strokeWidth={2} />
+        </div>
+      </foreignObject>
     </g>
   );
 };
