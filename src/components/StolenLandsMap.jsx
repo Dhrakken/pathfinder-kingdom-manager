@@ -10,28 +10,33 @@ import { HEX_STATUS, WORK_SITE_TYPES, TERRAIN_TYPES } from '../utils/hexUtils.js
 // STOLEN LANDS MAP - With Background Image
 // ============================================
 
-// Generate flat-top hex points for SVG
-const getFlatTopHexPoints = (cx, cy, size) => {
-  const points = [];
-  for (let i = 0; i < 6; i++) {
-    const angle = (Math.PI / 3) * i;
-    const x = cx + size * Math.cos(angle);
-    const y = cy + size * Math.sin(angle);
-    points.push(`${x.toFixed(1)},${y.toFixed(1)}`);
-  }
-  return points.join(' ');
+// David's fog CSS: width=230px, height=264px, pointy-top hex
+// clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)
+const HEX_W = 230;
+const HEX_H = 264;
+
+// Generate pointy-top hex points matching David's CSS clip-path
+const getPointyTopHexPoints = (x, y) => {
+  // Points relative to top-left corner of bounding box (230x264)
+  return [
+    `${x + HEX_W * 0.5},${y}`,           // 50% 0% - top point
+    `${x + HEX_W},${y + HEX_H * 0.25}`,  // 100% 25% - top-right
+    `${x + HEX_W},${y + HEX_H * 0.75}`,  // 100% 75% - bottom-right
+    `${x + HEX_W * 0.5},${y + HEX_H}`,   // 50% 100% - bottom point
+    `${x},${y + HEX_H * 0.75}`,          // 0% 75% - bottom-left
+    `${x},${y + HEX_H * 0.25}`,          // 0% 25% - top-left
+  ].join(' ');
 };
 
 // Single hex overlay
 const HexOverlay = ({ coord, hex, position, isSelected, onClick, kingdomColor }) => {
   if (!position) return null;
   
-  // The position values from David's tool are top-left of hex bounding box
-  // For flat-top hexes: width = 2*r, height = sqrt(3)*r
-  // With ~228px spacing, radius ≈ 114
-  const hexRadius = 113;
-  const cx = position.left + hexRadius; // Center X
-  const cy = position.top + hexRadius * Math.sqrt(3) / 2 + 5; // Center Y (adjusted)
+  // Position is top-left of hex bounding box (from David's tool)
+  const x = position.left;
+  const y = position.top;
+  const cx = x + HEX_W / 2; // Center for icons
+  const cy = y + HEX_H / 2;
   
   const { status, workSite, settlement, faction } = hex || {};
   
@@ -43,15 +48,15 @@ const HexOverlay = ({ coord, hex, position, isSelected, onClick, kingdomColor })
   
   if (status === HEX_STATUS.UNEXPLORED) {
     fillColor = '#1a1a2e';
-    fillOpacity = 1.0; // Fully opaque - hide unexplored terrain
+    fillOpacity = 1.0; // Fully opaque fog
   } else if (status === HEX_STATUS.EXPLORED) {
     fillColor = '#22c55e';
     fillOpacity = 0.15;
     strokeColor = '#22c55e';
-    strokeWidth = 1;
+    strokeWidth = 2;
   } else if (status === HEX_STATUS.CLAIMED) {
     fillColor = kingdomColor;
-    fillOpacity = 0.25;
+    fillOpacity = 0.3;
     strokeColor = kingdomColor;
     strokeWidth = 3;
   }
@@ -61,7 +66,7 @@ const HexOverlay = ({ coord, hex, position, isSelected, onClick, kingdomColor })
     strokeWidth = 4;
   }
   
-  const points = getFlatTopHexPoints(cx, cy, hexRadius);
+  const points = getPointyTopHexPoints(x, y);
   
   return (
     <g onClick={() => onClick && onClick(hex, coord)} style={{ cursor: 'pointer' }}>

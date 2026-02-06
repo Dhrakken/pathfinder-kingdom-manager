@@ -108,13 +108,14 @@ export const HEX_POSITIONS = {
   'j28': { top: 1989, left: 6205 },
 };
 
-// Map image dimensions (from stolen-lands-map.png)
-export const MAP_WIDTH = 6319;
-export const MAP_HEIGHT = 2200;
+// Map image dimensions (from David's CSS: .editorBackground)
+export const MAP_WIDTH = 6460;
+export const MAP_HEIGHT = 2260;
 
-// Hex dimensions (approximate)
-export const HEX_WIDTH = 229;
-export const HEX_HEIGHT = 198;
+// Hex dimensions (from David's CSS: .fog)
+// Pointy-top hexes: 230px wide, 264px tall
+export const HEX_WIDTH = 230;
+export const HEX_HEIGHT = 264;
 
 export const getHexPosition = (coord) => HEX_POSITIONS[coord.toLowerCase()];
 
