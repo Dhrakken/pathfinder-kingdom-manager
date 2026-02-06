@@ -102,7 +102,7 @@ const HexOverlay = ({ coord, hex, position, isSelected, onClick, kingdomColor })
       {/* Coordinate label */}
       <text
         x={cx}
-        y={cy + hexRadius + 12}
+        y={cy + HEX_H / 2 + 12}
         textAnchor="middle"
         fontSize="10"
         fill="rgba(255,255,255,0.7)"
