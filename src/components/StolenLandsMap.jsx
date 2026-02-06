@@ -42,8 +42,8 @@ const HexOverlay = ({ coord, hex, position, isSelected, onClick, kingdomColor })
   let strokeWidth = 0;
   
   if (status === HEX_STATUS.UNEXPLORED) {
-    fillColor = '#000000';
-    fillOpacity = 0.7;
+    fillColor = '#1a1a2e';
+    fillOpacity = 1.0; // Fully opaque - hide unexplored terrain
   } else if (status === HEX_STATUS.EXPLORED) {
     fillColor = '#22c55e';
     fillOpacity = 0.15;
