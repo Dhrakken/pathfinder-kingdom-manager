@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { 
-  MapPin, Mountain, TreePine, Home, Pickaxe, Wheat, 
+  MapPin, Mountain, TreePine, Home, Hammer, Wheat, 
   Eye, EyeOff, Flag, Info, X, ZoomIn, ZoomOut, Move
 } from 'lucide-react';
 import {
@@ -105,7 +105,7 @@ const Hex = ({
         <g transform={`translate(${cx - 6}, ${cy - 6})`}>
           {workSite === 'farm' && <Wheat size={12} stroke="#FFA500" />}
           {workSite === 'lumber' && <TreePine size={12} stroke="#228B22" />}
-          {workSite === 'mine' && <Pickaxe size={12} stroke="#A0A0A0" />}
+          {workSite === 'mine' && <Hammer size={12} stroke="#A0A0A0" />}
           {workSite === 'quarry' && <Mountain size={12} stroke="#808080" />}
         </g>
       )}
@@ -329,7 +329,7 @@ const HexInfoPanel = ({ hex, onClose, onAction, kingdomName = 'Nauthgard' }) => 
               onClick={() => onAction('worksite', hex)}
               className="btn-secondary text-xs flex items-center gap-1"
             >
-              <Pickaxe size={12} /> Work Site (2 RP)
+              <Hammer size={12} /> Work Site (2 RP)
             </button>
             <button 
               onClick={() => onAction('settlement', hex)}
