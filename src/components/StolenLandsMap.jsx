@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { HEX_POSITIONS, MAP_WIDTH, MAP_HEIGHT, HEX_WIDTH, HEX_HEIGHT } from '../data/hexPositions.js';
 import { HEX_STATUS, WORK_SITE_TYPES, TERRAIN_TYPES } from '../utils/hexUtils.js';
+import { POI_MARKERS, POI_TYPES } from '../data/poiMarkers.js';
 
 // ============================================
 // STOLEN LANDS MAP - With Background Image
@@ -28,6 +29,34 @@ const getPointyTopHexPoints = (x, y) => {
     `${x},${y + HEX_H * 0.75}`,          // 0% 75% - bottom-left
     `${x},${y + HEX_H * 0.25}`,          // 0% 25% - top-left
   ].join(' ');
+};
+
+// Icon mapping for POI markers
+const POI_ICON_MAP = {
+  Tent, Store, Signpost, Castle, Landmark, Skull, Fish, Droplets, 
+  MountainSnow, TreeDeciduous, Bug, Swords, Footprints, Milestone,
+  Hammer, Home, Wheat, TreePine, Mountain
+};
+
+// POI Marker component
+const POIMarker = ({ poi, onClick }) => {
+  const typeInfo = POI_TYPES[poi.type] || { icon: 'Flag', color: '#999', label: 'Unknown' };
+  const IconComponent = POI_ICON_MAP[typeInfo.icon] || Flag;
+  
+  return (
+    <g 
+      transform={`translate(${poi.left}, ${poi.top})`}
+      onClick={() => onClick && onClick(poi)}
+      style={{ cursor: 'pointer' }}
+      className="poi-marker"
+    >
+      {/* Background circle */}
+      <circle cx="0" cy="0" r="18" fill="rgba(0,0,0,0.85)" stroke={typeInfo.color} strokeWidth="2" />
+      {/* Icon */}
+      <IconComponent x="-10" y="-10" size={20} stroke={typeInfo.color} strokeWidth={1.5} />
+      {/* Hover tooltip would need to be done differently in SVG */}
+    </g>
+  );
 };
 
 // Single hex overlay
@@ -247,6 +276,7 @@ export default function StolenLandsMap({
   kingdomColor = '#3333f9',
 }) {
   const [selectedCoord, setSelectedCoord] = useState(null);
+  const [selectedPOI, setSelectedPOI] = useState(null);
   const [viewBox, setViewBox] = useState({ x: 3500, y: 400, width: 1500, height: 900 });
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
@@ -255,8 +285,15 @@ export default function StolenLandsMap({
   
   const selectedHex = selectedCoord ? hexes[selectedCoord] : null;
   
+  // Handle POI click
+  const handlePOIClick = useCallback((poi) => {
+    setSelectedCoord(null); // Deselect hex
+    setSelectedPOI(prev => prev === poi ? null : poi);
+  }, []);
+  
   // Handle hex click
   const handleHexClick = useCallback((hex, coord) => {
+    setSelectedPOI(null); // Deselect POI
     setSelectedCoord(prev => prev === coord ? null : coord);
   }, []);
   
@@ -396,9 +433,18 @@ export default function StolenLandsMap({
             kingdomColor={kingdomColor}
           />
         ))}
+        
+        {/* POI Markers */}
+        {POI_MARKERS.map((poi, idx) => (
+          <POIMarker
+            key={`poi-${idx}`}
+            poi={poi}
+            onClick={handlePOIClick}
+          />
+        ))}
       </svg>
       
-      {/* Info Panel */}
+      {/* Hex Info Panel */}
       <HexInfoPanel
         hex={selectedHex}
         coord={selectedCoord}
@@ -406,6 +452,24 @@ export default function StolenLandsMap({
         onAction={handleAction}
         kingdomName={kingdomName}
       />
+      
+      {/* POI Info Panel */}
+      {selectedPOI && (
+        <div className="absolute top-4 right-4 w-72 p-4 z-50 rounded-lg border border-yellow-600/30" style={{ backgroundColor: 'rgba(15, 15, 25, 0.95)' }}>
+          <div className="flex justify-between items-start mb-3">
+            <h3 className="text-lg font-semibold text-yellow-400">
+              {POI_TYPES[selectedPOI.type]?.label || 'Point of Interest'}
+            </h3>
+            <button onClick={() => setSelectedPOI(null)} className="text-gray-400 hover:text-white">
+              <X size={18} />
+            </button>
+          </div>
+          <div className="text-sm text-gray-300">{selectedPOI.title}</div>
+          {selectedPOI.faction === '1' && (
+            <div className="mt-2 text-xs text-green-400">✓ Controlled by {kingdomName}</div>
+          )}
+        </div>
+      )}
       
       {/* Work Site Modal */}
       {showWorkSiteModal && (
