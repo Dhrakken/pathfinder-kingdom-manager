@@ -10,7 +10,7 @@ A unified Pathfinder 2E Kingmaker companion that combines kingdom management wit
 ## 📋 Feature Backlog
 
 ### 1. 🗺️ Interactive Hex Map System
-**Status:** 🔴 Not Started  
+**Status:** 🟡 In Progress  
 **Priority:** HIGH (Foundation for other features)  
 **Estimated Effort:** Large
 
@@ -31,17 +31,20 @@ A unified Pathfinder 2E Kingmaker companion that combines kingdom management wit
 - Lazy render visible hexes only for performance
 
 **Sub-tasks:**
-- [ ] Hex grid component with proper geometry
-- [ ] Hex coordinate utilities (neighbors, distance, pathfinding)
-- [ ] Terrain rendering with icons/colors
-- [ ] Fog of war overlay
-- [ ] Hex selection and info panel
-- [ ] Work site placement UI
+- [x] Hex grid component with proper geometry
+- [x] Hex coordinate utilities (neighbors, distance, pathfinding)
+- [x] Terrain rendering with icons/colors
+- [x] Fog of war overlay
+- [x] Hex selection and info panel
+- [x] Work site icons
+- [x] Settlement markers
+- [x] Zoom/pan controls
+- [x] Persist hex data in kingdom state
+- [ ] Work site placement UI modal
 - [ ] Road drawing between hexes
-- [ ] Settlement markers with click-to-open
 - [ ] Party token with drag support
-- [ ] Zoom/pan controls
-- [ ] Persist hex data in save/load
+- [ ] Integration with Region Activities
+- [ ] Hex editing modal (terrain, notes)
 
 ---
 
@@ -196,3 +199,11 @@ A unified Pathfinder 2E Kingmaker companion that combines kingdom management wit
 - Repository cloned and analyzed
 - Roadmap created
 - Development plan established
+- **Hex Map v1 implemented:**
+  - Created src/utils/hexUtils.js with coordinate system
+  - Created src/components/HexMap.jsx with SVG rendering
+  - Added Map tab to KingdomManager
+  - Pre-populated Nauthgard's 12 claimed hexes
+  - Added explored hexes from imported map data
+  - Work sites and settlement markers working
+  - Zoom/pan/select functionality complete
