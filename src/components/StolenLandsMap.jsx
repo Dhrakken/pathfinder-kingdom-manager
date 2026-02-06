@@ -440,14 +440,16 @@ export default function StolenLandsMap({
           />
         ))}
         
-        {/* POI Markers */}
-        {POI_MARKERS.map((poi, idx) => (
-          <POIMarker
-            key={`poi-${idx}`}
-            poi={poi}
-            onClick={handlePOIClick}
-          />
-        ))}
+        {/* POI Markers - filter out faction='1' (kingdom infrastructure already shown as hex icons) */}
+        {POI_MARKERS
+          .filter(poi => poi.faction !== '1')
+          .map((poi, idx) => (
+            <POIMarker
+              key={`poi-${idx}`}
+              poi={poi}
+              onClick={handlePOIClick}
+            />
+          ))}
       </svg>
       
       {/* Hex Info Panel */}
