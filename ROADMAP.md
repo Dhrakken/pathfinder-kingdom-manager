@@ -40,7 +40,8 @@ A unified Pathfinder 2E Kingmaker companion that combines kingdom management wit
 - [x] Settlement markers
 - [x] Zoom/pan controls
 - [x] Persist hex data in kingdom state
-- [ ] Work site placement UI modal
+- [x] Work site placement UI modal
+- [x] Terrain selection modal
 - [ ] Road drawing between hexes
 - [ ] Party token with drag support
 - [ ] Integration with Region Activities
@@ -207,3 +208,6 @@ A unified Pathfinder 2E Kingmaker companion that combines kingdom management wit
   - Added explored hexes from imported map data
   - Work sites and settlement markers working
   - Zoom/pan/select functionality complete
+  - Added work site selection modal (farm/lumber/mine/quarry)
+  - Added terrain selection modal
+  - Hex info panel now interactive
