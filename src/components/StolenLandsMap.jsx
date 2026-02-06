@@ -26,10 +26,12 @@ const getFlatTopHexPoints = (cx, cy, size) => {
 const HexOverlay = ({ coord, hex, position, isSelected, onClick, kingdomColor }) => {
   if (!position) return null;
   
-  // Center of hex based on top-left position
-  const cx = position.left + HEX_WIDTH / 2;
-  const cy = position.top + HEX_HEIGHT / 2;
-  const hexRadius = Math.min(HEX_WIDTH, HEX_HEIGHT) / 2 - 5;
+  // The position values from David's tool are top-left of hex bounding box
+  // For flat-top hexes: width = 2*r, height = sqrt(3)*r
+  // With ~228px spacing, radius ≈ 114
+  const hexRadius = 113;
+  const cx = position.left + hexRadius; // Center X
+  const cy = position.top + hexRadius * Math.sqrt(3) / 2 + 5; // Center Y (adjusted)
   
   const { status, workSite, settlement, faction } = hex || {};
   
