@@ -38,21 +38,32 @@ const POI_ICON_MAP = {
   Hammer, Home, Wheat, TreePine, Mountain
 };
 
-// POI Marker component
-const POIMarker = ({ poi, onClick }) => {
+// POI Marker component - now draggable
+const POIMarker = ({ poi, onClick, onDragStart, isDragging }) => {
   const typeInfo = POI_TYPES[poi.type] || { icon: 'Flag', color: '#999', label: 'Unknown' };
   const IconComponent = POI_ICON_MAP[typeInfo.icon] || Flag;
+  
+  const handleMouseDown = (e) => {
+    e.stopPropagation();
+    if (onDragStart) onDragStart(poi, e);
+  };
   
   return (
     <g 
       transform={`translate(${poi.left}, ${poi.top})`}
-      onClick={() => onClick && onClick(poi)}
-      style={{ cursor: 'pointer' }}
+      onClick={(e) => { e.stopPropagation(); onClick && onClick(poi); }}
+      onMouseDown={handleMouseDown}
+      style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
       className="poi-marker"
     >
-      {/* Background circle - larger */}
-      <circle cx="0" cy="0" r="22" fill="rgba(0,0,0,0.9)" stroke={typeInfo.color} strokeWidth="3" />
-      {/* Icon - using foreignObject for proper rendering */}
+      {/* Background circle */}
+      <circle 
+        cx="0" cy="0" r="22" 
+        fill={isDragging ? 'rgba(50,50,80,0.95)' : 'rgba(0,0,0,0.9)'} 
+        stroke={isDragging ? '#FFD700' : typeInfo.color} 
+        strokeWidth={isDragging ? 4 : 3} 
+      />
+      {/* Icon */}
       <foreignObject x="-14" y="-14" width="28" height="28">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
           <IconComponent size={22} color={typeInfo.color} strokeWidth={2} />
@@ -278,8 +289,10 @@ const WorkSiteModal = ({ hex, coord, onSelect, onClose }) => {
 export default function StolenLandsMap({
   hexes = {},
   onHexUpdate,
+  onPOIUpdate,
   kingdomName = 'Nauthgard',
   kingdomColor = '#3333f9',
+  initialPOIs = null,
 }) {
   const [selectedCoord, setSelectedCoord] = useState(null);
   const [selectedPOI, setSelectedPOI] = useState(null);
@@ -287,15 +300,58 @@ export default function StolenLandsMap({
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const [showWorkSiteModal, setShowWorkSiteModal] = useState(false);
+  const [draggingPOI, setDraggingPOI] = useState(null);
+  const [poiPositions, setPOIPositions] = useState(() => {
+    // Initialize with positions from POI_MARKERS or provided initialPOIs
+    const pois = initialPOIs || POI_MARKERS;
+    return pois.filter(p => p.faction !== '1').map((poi, idx) => ({
+      ...poi,
+      id: poi.id || `poi-${idx}`,
+    }));
+  });
   const svgRef = useRef(null);
   
   const selectedHex = selectedCoord ? hexes[selectedCoord] : null;
   
   // Handle POI click
   const handlePOIClick = useCallback((poi) => {
-    setSelectedCoord(null); // Deselect hex
-    setSelectedPOI(prev => prev === poi ? null : poi);
+    if (draggingPOI) return; // Don't select while dragging
+    setSelectedCoord(null);
+    setSelectedPOI(prev => prev?.id === poi.id ? null : poi);
+  }, [draggingPOI]);
+  
+  // Handle POI drag start
+  const handlePOIDragStart = useCallback((poi, e) => {
+    setDraggingPOI(poi);
+    setSelectedPOI(null);
   }, []);
+  
+  // Handle POI drag (in mouse move)
+  const handlePOIDrag = useCallback((e) => {
+    if (!draggingPOI || !svgRef.current) return;
+    
+    const svg = svgRef.current;
+    const rect = svg.getBoundingClientRect();
+    const pt = svg.createSVGPoint();
+    pt.x = e.clientX;
+    pt.y = e.clientY;
+    const svgPt = pt.matrixTransform(svg.getScreenCTM().inverse());
+    
+    setPOIPositions(prev => prev.map(p => 
+      p.id === draggingPOI.id 
+        ? { ...p, left: svgPt.x, top: svgPt.y }
+        : p
+    ));
+  }, [draggingPOI]);
+  
+  // Handle POI drag end
+  const handlePOIDragEnd = useCallback(() => {
+    if (draggingPOI && onPOIUpdate) {
+      const updatedPOI = poiPositions.find(p => p.id === draggingPOI.id);
+      if (updatedPOI) onPOIUpdate(updatedPOI);
+    }
+    setDraggingPOI(null);
+  }, [draggingPOI, poiPositions, onPOIUpdate]);
   
   // Handle hex click
   const handleHexClick = useCallback((hex, coord) => {
@@ -338,15 +394,21 @@ export default function StolenLandsMap({
     });
   };
   
-  // Pan
+  // Pan (only if not dragging POI)
   const handleMouseDown = (e) => {
-    if (e.button === 0) {
+    if (e.button === 0 && !draggingPOI) {
       setIsPanning(true);
       setPanStart({ x: e.clientX, y: e.clientY });
     }
   };
   
   const handleMouseMove = (e) => {
+    // Handle POI dragging
+    if (draggingPOI) {
+      handlePOIDrag(e);
+      return;
+    }
+    // Handle map panning
     if (!isPanning || !svgRef.current) return;
     const rect = svgRef.current.getBoundingClientRect();
     const dx = (e.clientX - panStart.x) * (viewBox.width / rect.width);
@@ -359,7 +421,12 @@ export default function StolenLandsMap({
     setPanStart({ x: e.clientX, y: e.clientY });
   };
   
-  const handleMouseUp = () => setIsPanning(false);
+  const handleMouseUp = () => {
+    if (draggingPOI) {
+      handlePOIDragEnd();
+    }
+    setIsPanning(false);
+  };
   
   const handleWheel = (e) => {
     e.preventDefault();
@@ -415,7 +482,7 @@ export default function StolenLandsMap({
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
         onWheel={handleWheel}
-        style={{ cursor: isPanning ? 'grabbing' : 'grab' }}
+        style={{ cursor: draggingPOI ? 'grabbing' : isPanning ? 'grabbing' : 'grab' }}
         preserveAspectRatio="xMidYMid slice"
       >
         {/* Background map image */}
@@ -440,16 +507,16 @@ export default function StolenLandsMap({
           />
         ))}
         
-        {/* POI Markers - filter out faction='1' (kingdom infrastructure already shown as hex icons) */}
-        {POI_MARKERS
-          .filter(poi => poi.faction !== '1')
-          .map((poi, idx) => (
-            <POIMarker
-              key={`poi-${idx}`}
-              poi={poi}
-              onClick={handlePOIClick}
-            />
-          ))}
+        {/* POI Markers - draggable */}
+        {poiPositions.map((poi) => (
+          <POIMarker
+            key={poi.id}
+            poi={poi}
+            onClick={handlePOIClick}
+            onDragStart={handlePOIDragStart}
+            isDragging={draggingPOI?.id === poi.id}
+          />
+        ))}
       </svg>
       
       {/* Hex Info Panel */}
