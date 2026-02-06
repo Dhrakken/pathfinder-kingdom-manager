@@ -396,10 +396,10 @@ export default function StolenLandsMap({
     setShowWorkSiteModal(false);
   }, [selectedHex, selectedCoord, onHexUpdate]);
   
-  // Zoom
+  // Zoom (scroll up = zoom in, scroll down = zoom out)
   const handleZoom = (delta) => {
     setViewBox(prev => {
-      const factor = delta > 0 ? 0.8 : 1.25;
+      const factor = delta > 0 ? 1.25 : 0.8;
       const newWidth = Math.max(500, Math.min(4000, prev.width * factor));
       const newHeight = Math.max(300, Math.min(2200, prev.height * factor));
       const dx = (prev.width - newWidth) / 2;
