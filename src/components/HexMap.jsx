@@ -127,6 +127,102 @@ const Hex = ({
   );
 };
 
+// Work Site Selection Modal
+const WorkSiteModal = ({ hex, onSelect, onClose }) => {
+  if (!hex) return null;
+  
+  const workSiteOptions = [
+    { id: 'farm', name: 'Farmland', commodity: 'Food', icon: '🌾', description: 'Produces food each turn' },
+    { id: 'lumber', name: 'Lumber Camp', commodity: 'Lumber', icon: '🪵', description: 'Produces lumber from forests' },
+    { id: 'mine', name: 'Mine', commodity: 'Ore', icon: '⛏️', description: 'Extracts ore from hills/mountains' },
+    { id: 'quarry', name: 'Quarry', commodity: 'Stone', icon: '🪨', description: 'Produces stone blocks' },
+  ];
+  
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="glass-card p-6 max-w-md w-full">
+        <h3 className="text-xl font-semibold text-yellow-400 mb-2">
+          Establish Work Site
+        </h3>
+        <p className="text-gray-400 text-sm mb-4">
+          Hex {hex.coord.toUpperCase()} — Choose a work site type:
+        </p>
+        
+        <div className="space-y-2 mb-4">
+          {workSiteOptions.map(option => (
+            <button
+              key={option.id}
+              onClick={() => onSelect(option.id)}
+              className="w-full p-3 bg-white/5 hover:bg-white/10 rounded border border-white/10 hover:border-yellow-500/50 transition-all text-left flex items-center gap-3"
+            >
+              <span className="text-2xl">{option.icon}</span>
+              <div>
+                <div className="font-medium text-yellow-400">{option.name}</div>
+                <div className="text-xs text-gray-400">{option.description}</div>
+                <div className="text-xs text-green-400">→ +1 {option.commodity}/turn</div>
+              </div>
+            </button>
+          ))}
+        </div>
+        
+        <button
+          onClick={onClose}
+          className="btn-secondary w-full"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// Terrain Selection Modal
+const TerrainModal = ({ hex, onSelect, onClose }) => {
+  if (!hex) return null;
+  
+  const terrainOptions = Object.entries(TERRAIN_TYPES).map(([id, data]) => ({
+    id,
+    ...data,
+  }));
+  
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="glass-card p-6 max-w-md w-full">
+        <h3 className="text-xl font-semibold text-yellow-400 mb-2">
+          Set Terrain Type
+        </h3>
+        <p className="text-gray-400 text-sm mb-4">
+          Hex {hex.coord.toUpperCase()} — Select terrain:
+        </p>
+        
+        <div className="grid grid-cols-2 gap-2 mb-4">
+          {terrainOptions.map(option => (
+            <button
+              key={option.id}
+              onClick={() => onSelect(option.id)}
+              className={`p-3 rounded border transition-all text-center ${
+                hex.terrain === option.id 
+                  ? 'bg-yellow-500/20 border-yellow-500' 
+                  : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-yellow-500/50'
+              }`}
+            >
+              <span className="text-2xl block mb-1">{option.icon}</span>
+              <span className="text-sm">{option.name}</span>
+            </button>
+          ))}
+        </div>
+        
+        <button
+          onClick={onClose}
+          className="btn-secondary w-full"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+};
+
 // Hex info panel
 const HexInfoPanel = ({ hex, onClose, onAction, kingdomName = 'Nauthgard' }) => {
   if (!hex) return null;
@@ -141,10 +237,14 @@ const HexInfoPanel = ({ hex, onClose, onAction, kingdomName = 'Nauthgard' }) => 
           <h3 className="text-lg font-semibold text-yellow-400">
             Hex {hex.coord.toUpperCase()}
           </h3>
-          <div className="flex items-center gap-2 text-sm text-gray-400">
+          <button 
+            onClick={() => onAction('terrain', hex)}
+            className="flex items-center gap-2 text-sm text-gray-400 hover:text-yellow-400"
+          >
             <span>{terrainInfo.icon}</span>
             <span>{terrainInfo.name}</span>
-          </div>
+            <span className="text-xs">(click to change)</span>
+          </button>
         </div>
         <button 
           onClick={onClose}
@@ -174,7 +274,7 @@ const HexInfoPanel = ({ hex, onClose, onAction, kingdomName = 'Nauthgard' }) => 
           <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">Work Site</div>
           <div className="text-sm">
             <span className="text-yellow-400">{workSiteInfo.name}</span>
-            <span className="text-gray-400"> → {workSiteInfo.commodity}</span>
+            <span className="text-gray-400"> → +1 {workSiteInfo.commodity}/turn</span>
           </div>
         </div>
       )}
@@ -220,7 +320,7 @@ const HexInfoPanel = ({ hex, onClose, onAction, kingdomName = 'Nauthgard' }) => 
             onClick={() => onAction('claim', hex)}
             className="btn-royal text-xs flex items-center gap-1"
           >
-            <Flag size={12} /> Claim Hex
+            <Flag size={12} /> Claim Hex (1 RP)
           </button>
         )}
         {hex.status === HEX_STATUS.CLAIMED && !hex.workSite && !hex.settlement && (
@@ -229,7 +329,7 @@ const HexInfoPanel = ({ hex, onClose, onAction, kingdomName = 'Nauthgard' }) => 
               onClick={() => onAction('worksite', hex)}
               className="btn-secondary text-xs flex items-center gap-1"
             >
-              <Pickaxe size={12} /> Work Site
+              <Pickaxe size={12} /> Work Site (2 RP)
             </button>
             <button 
               onClick={() => onAction('settlement', hex)}
@@ -238,6 +338,14 @@ const HexInfoPanel = ({ hex, onClose, onAction, kingdomName = 'Nauthgard' }) => 
               <Home size={12} /> Settlement
             </button>
           </>
+        )}
+        {hex.status === HEX_STATUS.CLAIMED && hex.workSite && (
+          <button 
+            onClick={() => onAction('removeWorksite', hex)}
+            className="btn-secondary text-xs flex items-center gap-1 text-red-400"
+          >
+            <X size={12} /> Remove Work Site
+          </button>
         )}
       </div>
     </div>
@@ -258,6 +366,8 @@ export default function HexMap({
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const [showLabels, setShowLabels] = useState(true);
+  const [showWorkSiteModal, setShowWorkSiteModal] = useState(false);
+  const [showTerrainModal, setShowTerrainModal] = useState(false);
   const svgRef = useRef(null);
   
   // Generate all hex positions
@@ -300,28 +410,49 @@ export default function HexMap({
   const handleAction = useCallback((action, hex) => {
     if (!onHexUpdate) return;
     
-    const updates = { ...hex };
-    
     switch (action) {
       case 'explore':
-        updates.status = HEX_STATUS.EXPLORED;
+        const exploredHex = { ...hex, status: HEX_STATUS.EXPLORED };
+        onHexUpdate(exploredHex);
+        setSelectedHex(exploredHex);
         break;
       case 'claim':
-        updates.status = HEX_STATUS.CLAIMED;
-        updates.faction = '1'; // Default to player faction
+        const claimedHex = { ...hex, status: HEX_STATUS.CLAIMED, faction: '1' };
+        onHexUpdate(claimedHex);
+        setSelectedHex(claimedHex);
         break;
       case 'worksite':
-        // Would open a modal to select work site type
-        updates.workSite = 'mine'; // Placeholder
+        setShowWorkSiteModal(true);
+        break;
+      case 'terrain':
+        setShowTerrainModal(true);
+        break;
+      case 'removeWorksite':
+        const clearedHex = { ...hex, workSite: null };
+        onHexUpdate(clearedHex);
+        setSelectedHex(clearedHex);
         break;
       case 'settlement':
-        // Would open settlement creation modal
+        // TODO: Open settlement creation modal
         break;
     }
-    
-    onHexUpdate(updates);
-    setSelectedHex(updates);
   }, [onHexUpdate]);
+
+  const handleWorkSiteSelect = useCallback((workSiteType) => {
+    if (!selectedHex || !onHexUpdate) return;
+    const updatedHex = { ...selectedHex, workSite: workSiteType };
+    onHexUpdate(updatedHex);
+    setSelectedHex(updatedHex);
+    setShowWorkSiteModal(false);
+  }, [selectedHex, onHexUpdate]);
+
+  const handleTerrainSelect = useCallback((terrainType) => {
+    if (!selectedHex || !onHexUpdate) return;
+    const updatedHex = { ...selectedHex, terrain: terrainType };
+    onHexUpdate(updatedHex);
+    setSelectedHex(updatedHex);
+    setShowTerrainModal(false);
+  }, [selectedHex, onHexUpdate]);
   
   // Zoom controls
   const handleZoom = (delta) => {
@@ -453,6 +584,24 @@ export default function HexMap({
         onAction={handleAction}
         kingdomName={kingdomName}
       />
+      
+      {/* Work Site Modal */}
+      {showWorkSiteModal && (
+        <WorkSiteModal
+          hex={selectedHex}
+          onSelect={handleWorkSiteSelect}
+          onClose={() => setShowWorkSiteModal(false)}
+        />
+      )}
+      
+      {/* Terrain Modal */}
+      {showTerrainModal && (
+        <TerrainModal
+          hex={selectedHex}
+          onSelect={handleTerrainSelect}
+          onClose={() => setShowTerrainModal(false)}
+        />
+      )}
     </div>
   );
 }
