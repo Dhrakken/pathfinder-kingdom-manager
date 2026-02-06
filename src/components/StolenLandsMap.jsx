@@ -1,7 +1,9 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { 
   Home, Hammer, Wheat, Eye, Flag, Info, X, ZoomIn, ZoomOut,
-  Mountain, TreePine
+  Mountain, TreePine, Tent, Store, Signpost, Castle, Landmark, 
+  Skull, Fish, Droplets, MountainSnow, TreeDeciduous, Bug, 
+  Swords, Footprints, Milestone, ScrollText
 } from 'lucide-react';
 import { HEX_POSITIONS, MAP_WIDTH, MAP_HEIGHT, HEX_WIDTH, HEX_HEIGHT } from '../data/hexPositions.js';
 import { HEX_STATUS, WORK_SITE_TYPES, TERRAIN_TYPES } from '../utils/hexUtils.js';
@@ -80,22 +82,30 @@ const HexOverlay = ({ coord, hex, position, isSelected, onClick, kingdomColor })
         className="transition-all duration-200 hover:fill-opacity-40"
       />
       
-      {/* Settlement icon - LARGE */}
+      {/* Settlement icon - EXTRA LARGE */}
       {settlement && (
-        <g transform={`translate(${cx - 24}, ${cy - 24})`}>
-          <circle cx="24" cy="24" r="28" fill="#2d004d" stroke="#D4AF37" strokeWidth="3" />
-          <Home x="8" y="8" size={32} stroke="#D4AF37" strokeWidth={2} />
+        <g transform={`translate(${cx - 28}, ${cy - 28})`}>
+          <circle cx="28" cy="28" r="32" fill="#2d004d" stroke="#D4AF37" strokeWidth="3" />
+          <Home x="8" y="8" size={40} stroke="#D4AF37" strokeWidth={2} />
         </g>
       )}
       
-      {/* Work site icon - LARGER */}
+      {/* Work site icon - LARGE */}
       {workSite && !settlement && (
-        <g transform={`translate(${cx - 18}, ${cy - 18})`}>
-          <circle cx="18" cy="18" r="22" fill="rgba(0,0,0,0.7)" stroke="rgba(255,255,255,0.3)" strokeWidth="2" />
-          {workSite === 'farm' && <Wheat x="6" y="6" size={24} stroke="#FFA500" strokeWidth={2} />}
-          {workSite === 'lumber' && <TreePine x="6" y="6" size={24} stroke="#228B22" strokeWidth={2} />}
-          {workSite === 'mine' && <Hammer x="6" y="6" size={24} stroke="#A0A0A0" strokeWidth={2} />}
-          {workSite === 'quarry' && <Mountain x="6" y="6" size={24} stroke="#808080" strokeWidth={2} />}
+        <g transform={`translate(${cx - 22}, ${cy - 22})`}>
+          <circle cx="22" cy="22" r="26" fill="rgba(0,0,0,0.8)" stroke="rgba(255,255,255,0.4)" strokeWidth="2" />
+          {workSite === 'farm' && <Wheat x="6" y="6" size={32} stroke="#FFA500" strokeWidth={2} />}
+          {workSite === 'lumber' && <TreePine x="6" y="6" size={32} stroke="#228B22" strokeWidth={2} />}
+          {workSite === 'mine' && <Hammer x="6" y="6" size={32} stroke="#A0A0A0" strokeWidth={2} />}
+          {workSite === 'quarry' && <Mountain x="6" y="6" size={32} stroke="#808080" strokeWidth={2} />}
+        </g>
+      )}
+      
+      {/* Notes indicator - small scroll icon in top-right corner */}
+      {hex?.notes && (
+        <g transform={`translate(${cx + HEX_W/4}, ${cy - HEX_H/4})`}>
+          <circle cx="0" cy="0" r="14" fill="rgba(255,200,50,0.9)" stroke="#333" strokeWidth="1" />
+          <Info x="-8" y="-8" size={16} stroke="#333" strokeWidth={2} />
         </g>
       )}
       
