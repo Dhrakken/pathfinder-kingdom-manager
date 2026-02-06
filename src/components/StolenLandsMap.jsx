@@ -302,6 +302,15 @@ export default function StolenLandsMap({
   const [showWorkSiteModal, setShowWorkSiteModal] = useState(false);
   const [draggingPOI, setDraggingPOI] = useState(null);
   const [poiPositions, setPOIPositions] = useState(() => {
+    // Try to load from localStorage first
+    const saved = localStorage.getItem('kingdomManager_poiPositions');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.warn('Failed to parse saved POI positions', e);
+      }
+    }
     // Initialize with positions from POI_MARKERS or provided initialPOIs
     const pois = initialPOIs || POI_MARKERS;
     return pois.filter(p => p.faction !== '1').map((poi, idx) => ({
@@ -310,6 +319,11 @@ export default function StolenLandsMap({
     }));
   });
   const svgRef = useRef(null);
+  
+  // Save POI positions to localStorage when they change
+  useEffect(() => {
+    localStorage.setItem('kingdomManager_poiPositions', JSON.stringify(poiPositions));
+  }, [poiPositions]);
   
   const selectedHex = selectedCoord ? hexes[selectedCoord] : null;
   
