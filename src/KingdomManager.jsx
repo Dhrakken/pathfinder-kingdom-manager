@@ -947,7 +947,7 @@ function CustomMapViewer({ map, onUpdate, onDelete }) {
     onUpdate({ ...map, fog: newFog });
   };
   
-  // Zoom
+  // Zoom (normal mode)
   const handleZoom = (delta) => {
     setViewBox(prev => {
       const factor = delta > 0 ? 1.25 : 0.8;
@@ -959,7 +959,13 @@ function CustomMapViewer({ map, onUpdate, onDelete }) {
     });
   };
   
-  // Pan
+  // Grid size adjustment (grid mode)
+  const handleGridResize = (delta) => {
+    const change = delta > 0 ? -2 : 2; // Scroll up = bigger, down = smaller
+    setGridSize(prev => Math.max(10, Math.min(200, prev + change)));
+  };
+  
+  // Mouse handlers
   const handleMouseDown = (e) => {
     if (e.button === 0 && !fogMode) {
       setIsPanning(true);
@@ -972,16 +978,32 @@ function CustomMapViewer({ map, onUpdate, onDelete }) {
     const rect = svgRef.current.getBoundingClientRect();
     const dx = (e.clientX - panStart.x) * (viewBox.width / rect.width);
     const dy = (e.clientY - panStart.y) * (viewBox.height / rect.height);
-    setViewBox(prev => ({
-      ...prev,
-      x: Math.max(0, Math.min(imageDimensions.width - prev.width, prev.x - dx)),
-      y: Math.max(0, Math.min(imageDimensions.height - prev.height, prev.y - dy)),
-    }));
+    
+    if (showGridSettings) {
+      // In grid mode: drag moves the grid offset
+      setGridOffsetX(prev => prev - dx);
+      setGridOffsetY(prev => prev - dy);
+    } else {
+      // Normal mode: drag pans the view
+      setViewBox(prev => ({
+        ...prev,
+        x: Math.max(0, Math.min(imageDimensions.width - prev.width, prev.x - dx)),
+        y: Math.max(0, Math.min(imageDimensions.height - prev.height, prev.y - dy)),
+      }));
+    }
     setPanStart({ x: e.clientX, y: e.clientY });
   };
   
   const handleMouseUp = () => setIsPanning(false);
-  const handleWheel = (e) => { e.preventDefault(); handleZoom(e.deltaY); };
+  
+  const handleWheel = (e) => {
+    e.preventDefault();
+    if (showGridSettings) {
+      handleGridResize(e.deltaY); // Grid mode: scroll = resize grid
+    } else {
+      handleZoom(e.deltaY); // Normal mode: scroll = zoom
+    }
+  };
   
   return (
     <div className="space-y-4">
@@ -1048,52 +1070,34 @@ function CustomMapViewer({ map, onUpdate, onDelete }) {
       
       {/* Grid Settings Panel */}
       {showGridSettings && (
-        <div className="bg-gray-800 rounded-lg p-4 border border-yellow-600/30">
-          <h4 className="text-sm font-medium text-yellow-400 mb-3">Grid Alignment</h4>
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs text-gray-400 mb-1">Size (px)</label>
-              <input
-                type="number"
-                value={gridSize}
-                onChange={(e) => setGridSize(Math.max(10, Number(e.target.value)))}
-                className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-400 mb-1">Offset X</label>
-              <input
-                type="number"
-                value={gridOffsetX}
-                onChange={(e) => setGridOffsetX(Number(e.target.value))}
-                className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-400 mb-1">Offset Y</label>
-              <input
-                type="number"
-                value={gridOffsetY}
-                onChange={(e) => setGridOffsetY(Number(e.target.value))}
-                className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm"
-              />
-            </div>
+        <div className="bg-yellow-900/30 rounded-lg p-4 border border-yellow-500">
+          <div className="flex items-center justify-between mb-2">
+            <h4 className="text-sm font-medium text-yellow-400">🎯 Grid Alignment Mode</h4>
+            <span className="text-xs text-gray-400">Size: {gridSize}px</span>
           </div>
-          <div className="flex gap-2 mt-3">
+          <div className="text-sm text-gray-300 mb-3">
+            <p>• <strong>Drag</strong> to position the grid</p>
+            <p>• <strong>Scroll</strong> to resize grid cells</p>
+          </div>
+          <div className="flex gap-2">
             <button
               onClick={saveGridSettings}
-              className="px-3 py-1 bg-yellow-600 hover:bg-yellow-500 text-black rounded text-sm"
+              className="px-3 py-1 bg-green-600 hover:bg-green-500 text-white rounded text-sm"
             >
-              Save & Reset Fog
+              ✓ Save Grid
             </button>
             <button
-              onClick={() => setShowGridSettings(false)}
+              onClick={() => {
+                setGridSize(map.gridSize || 50);
+                setGridOffsetX(map.gridOffsetX || 0);
+                setGridOffsetY(map.gridOffsetY || 0);
+                setShowGridSettings(false);
+              }}
               className="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-sm"
             >
               Cancel
             </button>
           </div>
-          <p className="text-xs text-gray-500 mt-2">Note: Changing grid resets fog of war</p>
         </div>
       )}
       
