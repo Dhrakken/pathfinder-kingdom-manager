@@ -20,7 +20,7 @@
 ### Phase 3: Kingdom Progression
 - [x] ~~**XP Tracking** - Awards from activities/events/milestones~~
 - [x] ~~**Level Up Process** - Ability boost, skill training~~
-- [ ] **Skill Training Purchase** - Spend RP to train skills
+- [x] ~~**Skill Training Purchase** - Spend RP to train skills~~
 - [ ] **Kingdom Feats** - Feat database + selection UI
 - [x] ~~**Milestone Tracking** - First village, first city, etc.~~
 
@@ -135,10 +135,10 @@
 | Phase | Status | Completion |
 |-------|--------|------------|
 | Phase 1: MVP Turn | ✅ Complete | 100% |
-| Phase 2: Full Mechanics | 🚧 In Progress | 60% |
-| Phase 3: Progression | ⏳ Planned | 0% |
+| Phase 2: Full Mechanics | ✅ Complete | 100% |
+| Phase 3: Progression | 🚧 In Progress | 75% |
 | Phase 4: Advanced | ⏳ Planned | 0% |
 
-**Overall: ~45% to feature-complete**
+**Overall: ~60% to feature-complete**
 
-> Last updated: 2026-02-07 08:15 EST
+> Last updated: 2026-02-07 08:45 EST

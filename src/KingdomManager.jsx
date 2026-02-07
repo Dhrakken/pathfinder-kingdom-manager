@@ -4,7 +4,7 @@ import {
   Shield, BookOpen, Sword, Calendar, Plus, Save, Download, Upload,
   Home, LayoutDashboard, Map, History, Settings, ChevronRight, Dice6,
   AlertTriangle, CheckCircle, XCircle, TrendingUp, TrendingDown,
-  ChevronDown, Image, Grid, Hexagon
+  ChevronDown, Image, Grid, Hexagon, Building2
 } from 'lucide-react';
 import { 
   getSizeData, getControlDC, ABILITIES, SKILLS, ALL_SKILLS,
@@ -23,6 +23,7 @@ import TradeModal from './components/TradeModal.jsx';
 import KingdomCreationWizard from './components/KingdomCreationWizard.jsx';
 import LevelUpModal from './components/LevelUpModal.jsx';
 import SkillsPanel from './components/SkillsPanel.jsx';
+import SettlementBuilder from './components/SettlementBuilder.jsx';
 import { checkLevelUp, checkMilestones, awardMilestones, getXPToNextLevel } from './engine/progressionEngine.js';
 import { HEX_STATUS, parseImportedMapData } from './utils/hexUtils.js';
 import { runFullUpkeep, checkLeadershipVacancies } from './engine/upkeepEngine.js';
@@ -688,21 +689,48 @@ export default function KingdomManager() {
     );
   };
 
-  const renderSettlements = () => (
-    <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-yellow-400 flex items-center gap-2"><Home className="w-6 h-6" /> Settlements</h2>
-      {state.settlements.map(settlement => (
-        <div key={settlement.id} className="glass-card p-4">
-          <div className="flex items-center justify-between mb-4">
-            <div><h3 className="text-lg font-semibold text-yellow-400">{settlement.name}{settlement.isCapital && <Crown className="inline w-4 h-4 ml-2 text-yellow-500" />}</h3><div className="text-sm text-gray-400">{settlement.blocks} blocks • {settlement.structures.length} structures</div></div>
-          </div>
-          <div className="grid grid-cols-4 gap-2 max-w-md">
-            {Array(16).fill(null).map((_, i) => { const structure = settlement.structures[i]; const structureData = structure ? STRUCTURES.find(s => s.id === structure) : null; return (<div key={i} className={`urban-block ${structure ? 'occupied' : ''}`} title={structureData?.name}>{structureData ? <span className="text-xs text-center leading-tight">{structureData.name}</span> : <Plus className="w-4 h-4 text-gray-500" />}</div>); })}
+  const renderSettlements = () => {
+    const handleUpdateSettlement = (updatedSettlement, newResources) => {
+      setState(prev => ({
+        ...prev,
+        settlements: prev.settlements.map(s => 
+          s.id === updatedSettlement.id ? updatedSettlement : s
+        ),
+        resources: newResources || prev.resources,
+      }));
+    };
+    
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-yellow-400 flex items-center gap-2">
+            <Home className="w-6 h-6" /> Settlements
+          </h2>
+          <div className="text-sm text-gray-400">
+            {state.settlements?.length || 0} settlement{(state.settlements?.length || 0) !== 1 ? 's' : ''}
           </div>
         </div>
-      ))}
-    </div>
-  );
+        
+        {state.settlements?.length === 0 ? (
+          <div className="glass-card p-8 text-center text-gray-400">
+            <Building2 className="w-12 h-12 mx-auto mb-4 text-gray-600" />
+            <p>No settlements yet.</p>
+            <p className="text-sm mt-2">Use the "Establish Settlement" activity to found one!</p>
+          </div>
+        ) : (
+          state.settlements.map(settlement => (
+            <SettlementBuilder
+              key={settlement.id}
+              settlement={settlement}
+              state={state}
+              onUpdateSettlement={handleUpdateSettlement}
+              onLog={addLog}
+            />
+          ))
+        )}
+      </div>
+    );
+  };
 
   const renderTurnLog = () => (
     <div className="space-y-4">
