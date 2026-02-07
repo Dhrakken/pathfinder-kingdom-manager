@@ -80,7 +80,7 @@ const POIMarker = ({ poi, onClick, onDragStart, onContextMenu, isDragging }) => 
 };
 
 // Single hex overlay
-const HexOverlay = ({ coord, hex, position, isSelected, onClick, kingdomColor }) => {
+const HexOverlay = ({ coord, hex, position, isSelected, onClick, getFactionColor, defaultColor }) => {
   if (!position) return null;
   
   // Position is top-left of hex bounding box (from David's tool)
@@ -90,6 +90,9 @@ const HexOverlay = ({ coord, hex, position, isSelected, onClick, kingdomColor })
   const cy = y + HEX_H / 2;
   
   const { status, workSite, settlement, faction } = hex || {};
+  
+  // Get the faction color, or use default
+  const factionColor = faction ? (getFactionColor?.(faction) || defaultColor) : defaultColor;
   
   // Determine fill based on status
   let fillColor = 'transparent';
@@ -106,9 +109,9 @@ const HexOverlay = ({ coord, hex, position, isSelected, onClick, kingdomColor })
     strokeColor = '#22c55e';
     strokeWidth = 2;
   } else if (status === HEX_STATUS.CLAIMED) {
-    fillColor = kingdomColor;
+    fillColor = factionColor;
     fillOpacity = 0.3;
-    strokeColor = kingdomColor;
+    strokeColor = factionColor;
     strokeWidth = 3;
   }
   
@@ -480,12 +483,26 @@ const POIEditorModal = ({ poi, isNew, onSave, onDelete, onClose }) => {
 // Main Stolen Lands Map component
 export default function StolenLandsMap({
   hexes = {},
+  factions = {},
   onHexUpdate,
+  onFactionsUpdate,
   onPOIUpdate,
   kingdomName = 'Nauthgard',
-  kingdomColor = '#3333f9',
   initialPOIs = null,
 }) {
+  // Get player faction color (default to first faction or blue)
+  const getPlayerFactionColor = () => {
+    const playerFaction = Object.values(factions).find(f => f.isPlayer);
+    return playerFaction?.color || '#6366f1';
+  };
+  
+  // Get faction color by ID
+  const getFactionColor = (factionId) => {
+    if (!factionId) return null;
+    return factions[factionId]?.color || '#6366f1';
+  };
+  
+  const [showFactionManager, setShowFactionManager] = useState(false);
   const [selectedCoord, setSelectedCoord] = useState(null);
   const [selectedPOI, setSelectedPOI] = useState(null);
   const [viewBox, setViewBox] = useState({ x: 3500, y: 400, width: 1500, height: 900 });
@@ -807,11 +824,13 @@ export default function StolenLandsMap({
       
       {/* Legend */}
       <div className="absolute bottom-4 left-4 z-40 glass-card p-3 text-xs">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 rounded" style={{ background: kingdomColor }} />
-            <span>Claimed</span>
-          </div>
+        <div className="flex items-center gap-4 flex-wrap">
+          {Object.values(factions).map(faction => (
+            <div key={faction.id} className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded" style={{ background: faction.color }} />
+              <span>{faction.name}</span>
+            </div>
+          ))}
           <div className="flex items-center gap-1">
             <div className="w-3 h-3 rounded bg-green-600/50" />
             <span>Explored</span>
@@ -820,6 +839,12 @@ export default function StolenLandsMap({
             <div className="w-3 h-3 rounded bg-black/70" />
             <span>Fog</span>
           </div>
+          <button 
+            onClick={() => setShowFactionManager(true)}
+            className="ml-2 px-2 py-1 bg-yellow-600/20 hover:bg-yellow-600/40 rounded text-yellow-400"
+          >
+            + Factions
+          </button>
         </div>
       </div>
       
@@ -855,7 +880,8 @@ export default function StolenLandsMap({
             position={position}
             isSelected={selectedCoord === coord}
             onClick={handleHexClick}
-            kingdomColor={kingdomColor}
+            getFactionColor={getFactionColor}
+            defaultColor={getPlayerFactionColor()}
           />
         ))}
         
@@ -991,6 +1017,186 @@ export default function StolenLandsMap({
           onClose={() => setPOIEditor(null)}
         />
       )}
+      
+      {/* Faction Manager Modal */}
+      {showFactionManager && (
+        <FactionManager
+          factions={factions}
+          onUpdate={(updatedFactions) => {
+            if (onFactionsUpdate) onFactionsUpdate(updatedFactions);
+          }}
+          onClose={() => setShowFactionManager(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+// ============================================
+// FACTION MANAGER MODAL
+// ============================================
+function FactionManager({ factions, onUpdate, onClose }) {
+  const [localFactions, setLocalFactions] = useState({ ...factions });
+  const [editingId, setEditingId] = useState(null);
+  const [newFaction, setNewFaction] = useState({ name: '', color: '#ef4444', isPlayer: false });
+  
+  const PRESET_COLORS = [
+    '#6366f1', // Indigo (player default)
+    '#ef4444', // Red
+    '#f97316', // Orange
+    '#eab308', // Yellow
+    '#22c55e', // Green
+    '#06b6d4', // Cyan
+    '#8b5cf6', // Purple
+    '#ec4899', // Pink
+    '#6b7280', // Gray
+    '#1e293b', // Dark
+  ];
+  
+  const handleAddFaction = () => {
+    if (!newFaction.name.trim()) return;
+    const id = `faction-${Date.now()}`;
+    setLocalFactions(prev => ({
+      ...prev,
+      [id]: { id, ...newFaction, name: newFaction.name.trim() }
+    }));
+    setNewFaction({ name: '', color: '#ef4444', isPlayer: false });
+  };
+  
+  const handleUpdateFaction = (id, updates) => {
+    setLocalFactions(prev => ({
+      ...prev,
+      [id]: { ...prev[id], ...updates }
+    }));
+  };
+  
+  const handleDeleteFaction = (id) => {
+    if (localFactions[id]?.isPlayer) {
+      alert("Cannot delete the player faction!");
+      return;
+    }
+    setLocalFactions(prev => {
+      const { [id]: removed, ...rest } = prev;
+      return rest;
+    });
+  };
+  
+  const handleSave = () => {
+    onUpdate(localFactions);
+    onClose();
+  };
+  
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
+      <div className="bg-gray-900/95 border border-yellow-600/30 rounded-lg p-6 max-w-lg w-full max-h-[80vh] overflow-y-auto">
+        <h3 className="text-xl font-semibold text-yellow-400 mb-4">Manage Factions</h3>
+        
+        {/* Existing Factions */}
+        <div className="space-y-3 mb-6">
+          {Object.values(localFactions).map(faction => (
+            <div key={faction.id} className="flex items-center gap-3 p-3 bg-gray-800 rounded-lg">
+              {/* Color picker */}
+              <input
+                type="color"
+                value={faction.color}
+                onChange={(e) => handleUpdateFaction(faction.id, { color: e.target.value })}
+                className="w-8 h-8 rounded cursor-pointer"
+              />
+              
+              {/* Name */}
+              {editingId === faction.id ? (
+                <input
+                  type="text"
+                  value={faction.name}
+                  onChange={(e) => handleUpdateFaction(faction.id, { name: e.target.value })}
+                  onBlur={() => setEditingId(null)}
+                  onKeyDown={(e) => e.key === 'Enter' && setEditingId(null)}
+                  className="flex-1 bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white"
+                  autoFocus
+                />
+              ) : (
+                <span 
+                  className="flex-1 text-white cursor-pointer hover:text-yellow-400"
+                  onClick={() => setEditingId(faction.id)}
+                >
+                  {faction.name}
+                </span>
+              )}
+              
+              {/* Player badge */}
+              {faction.isPlayer && (
+                <span className="text-xs bg-yellow-600 text-black px-2 py-0.5 rounded">PLAYER</span>
+              )}
+              
+              {/* Delete button */}
+              {!faction.isPlayer && (
+                <button
+                  onClick={() => handleDeleteFaction(faction.id)}
+                  className="text-red-400 hover:text-red-300 p-1"
+                >
+                  <Trash2 size={16} />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+        
+        {/* Add New Faction */}
+        <div className="border-t border-gray-700 pt-4 mb-4">
+          <h4 className="text-sm text-gray-400 mb-2">Add New Faction</h4>
+          <div className="flex items-center gap-2">
+            <input
+              type="color"
+              value={newFaction.color}
+              onChange={(e) => setNewFaction(prev => ({ ...prev, color: e.target.value }))}
+              className="w-8 h-8 rounded cursor-pointer"
+            />
+            <input
+              type="text"
+              value={newFaction.name}
+              onChange={(e) => setNewFaction(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="Faction name..."
+              className="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white"
+              onKeyDown={(e) => e.key === 'Enter' && handleAddFaction()}
+            />
+            <button
+              onClick={handleAddFaction}
+              disabled={!newFaction.name.trim()}
+              className={`px-3 py-2 rounded ${newFaction.name.trim() ? 'bg-green-600 hover:bg-green-500 text-white' : 'bg-gray-700 text-gray-500'}`}
+            >
+              Add
+            </button>
+          </div>
+          
+          {/* Preset colors */}
+          <div className="flex gap-1 mt-2">
+            {PRESET_COLORS.map(color => (
+              <button
+                key={color}
+                onClick={() => setNewFaction(prev => ({ ...prev, color }))}
+                className={`w-6 h-6 rounded ${newFaction.color === color ? 'ring-2 ring-white' : ''}`}
+                style={{ background: color }}
+              />
+            ))}
+          </div>
+        </div>
+        
+        {/* Actions */}
+        <div className="flex gap-2">
+          <button
+            onClick={handleSave}
+            className="flex-1 bg-yellow-600 hover:bg-yellow-500 text-black font-medium py-2 px-4 rounded"
+          >
+            Save Changes
+          </button>
+          <button
+            onClick={onClose}
+            className="bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

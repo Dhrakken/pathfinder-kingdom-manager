@@ -46,6 +46,10 @@ const createInitialState = () => {
   const sizeData = getSizeData(hexes);
   
   return {
+    // Factions for territory control
+    factions: {
+      '1': { id: '1', name: 'Nauthgard', color: '#6366f1', isPlayer: true },
+    },
     kingdom: {
       name: 'Nauthgard',
       capital: 'Lakewatch',
@@ -547,9 +551,10 @@ export default function KingdomManager() {
           <div className="h-[700px]">
             <StolenLandsMap
               hexes={state.hexMap}
+              factions={state.factions}
               onHexUpdate={handleHexUpdate}
+              onFactionsUpdate={(factions) => setState(prev => ({ ...prev, factions }))}
               kingdomName={state.kingdom.name}
-              kingdomColor="#3333f9"
             />
           </div>
         </div>
