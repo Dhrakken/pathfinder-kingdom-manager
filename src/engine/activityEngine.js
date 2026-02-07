@@ -7,6 +7,7 @@ import { getActivityById } from '../data/activities.js';
 import { getControlDC, getSizeData, getProficiencyBonus, getAbilityForSkill } from '../data/reference.js';
 import { getInvestedLeaderBonus } from './upkeepEngine.js';
 import { getItemBonusForActivity, getItemBonusForSkill } from './structureEngine.js';
+import { getFeatBonusForActivity, getFeatBonusForSkill, getActivityCostModFromFeats } from './featEngine.js';
 
 // Dice utilities
 const rollDie = (sides) => Math.floor(Math.random() * sides) + 1;
@@ -53,11 +54,11 @@ export const getSkillModifierBreakdown = (state, skillName, activityId = null) =
   // Invested leader bonus
   const leaderBonus = getInvestedLeaderBonus(state, skillName);
   
-  // Item bonus from structures
+  // Item bonus from structures and feats (don't stack - use highest)
   let itemBonus = 0;
   let itemBonusSource = null;
   
-  // First check for activity-specific bonus
+  // First check for activity-specific bonus from structures
   if (activityId) {
     const activityItemBonus = getItemBonusForActivity(state, activityId);
     if (activityItemBonus.bonus > 0) {
@@ -66,13 +67,29 @@ export const getSkillModifierBreakdown = (state, skillName, activityId = null) =
     }
   }
   
-  // If no activity bonus, check for skill bonus
+  // Check for activity-specific bonus from feats
+  if (activityId) {
+    const featActivityBonus = getFeatBonusForActivity(state, activityId);
+    if (featActivityBonus.bonus > itemBonus) {
+      itemBonus = featActivityBonus.bonus;
+      itemBonusSource = featActivityBonus.source + ' (Feat)';
+    }
+  }
+  
+  // Check for skill bonus from structures
   if (itemBonus === 0) {
     const skillItemBonus = getItemBonusForSkill(state, skillName);
     if (skillItemBonus.bonus > 0) {
       itemBonus = skillItemBonus.bonus;
       itemBonusSource = skillItemBonus.source;
     }
+  }
+  
+  // Check for skill bonus from feats
+  const featSkillBonus = getFeatBonusForSkill(state, skillName);
+  if (featSkillBonus.bonus > itemBonus) {
+    itemBonus = featSkillBonus.bonus;
+    itemBonusSource = featSkillBonus.source + ' (Feat)';
   }
   
   const total = abilityMod + profBonus - unrestPenalty + leaderBonus + itemBonus;
@@ -570,8 +587,11 @@ export const executeActivity = (state, activityId, inputs = {}) => {
     return { success: false, error: prereqCheck.error };
   }
   
-  // Check RP cost
-  const rpCost = activity.rpCost || 0;
+  // Check RP cost (with feat modifiers)
+  const baseCost = activity.rpCost || 0;
+  const featCostMod = getActivityCostModFromFeats(state, activityId);
+  const rpCost = Math.max(0, baseCost + featCostMod);
+  
   if (rpCost > 0 && (state.resources?.rp || 0) < rpCost) {
     return { success: false, error: `Insufficient RP (need ${rpCost}, have ${state.resources?.rp || 0})` };
   }

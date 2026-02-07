@@ -5,6 +5,7 @@
 
 import { STRUCTURES, getStructureById } from '../data/structures.js';
 import { getAbilityForSkill } from '../data/reference.js';
+import { getConsumptionModFromFeats } from './featEngine.js';
 
 /**
  * Get the highest item bonus for a specific activity from all settlements
@@ -122,6 +123,10 @@ export const calculateTotalConsumption = (state) => {
       }
     }
   }
+  
+  // Apply feat modifiers (negative = reduction)
+  const featMod = getConsumptionModFromFeats(state);
+  reductions -= featMod; // featMod is already negative for reductions
   
   return Math.max(0, totalConsumption - reductions);
 };
