@@ -3,7 +3,8 @@ import {
   Home, Hammer, Wheat, Eye, Flag, Info, X, ZoomIn, ZoomOut,
   Mountain, TreePine, Tent, Store, MapPin, Building, Landmark, 
   Skull, Fish, Droplet, TreeDeciduous, Sparkles, Ghost,
-  Swords, Footprints, Link2
+  Swords, Footprints, Link2, Plus, Edit, Trash2, 
+  EyeOff, Users, Navigation, Crosshair
 } from 'lucide-react';
 import { HEX_POSITIONS, MAP_WIDTH, MAP_HEIGHT, HEX_WIDTH, HEX_HEIGHT } from '../data/hexPositions.js';
 import { HEX_STATUS, WORK_SITE_TYPES, TERRAIN_TYPES } from '../utils/hexUtils.js';
@@ -39,7 +40,7 @@ const POI_ICON_MAP = {
 };
 
 // POI Marker component - now draggable
-const POIMarker = ({ poi, onClick, onDragStart, isDragging }) => {
+const POIMarker = ({ poi, onClick, onDragStart, onContextMenu, isDragging }) => {
   const typeInfo = POI_TYPES[poi.type] || { icon: 'Flag', color: '#999', label: 'Unknown' };
   const IconComponent = POI_ICON_MAP[typeInfo.icon] || Flag;
   
@@ -48,11 +49,16 @@ const POIMarker = ({ poi, onClick, onDragStart, isDragging }) => {
     if (onDragStart) onDragStart(poi, e);
   };
   
+  const handleContextMenu = (e) => {
+    if (onContextMenu) onContextMenu(e, poi);
+  };
+  
   return (
     <g 
       transform={`translate(${poi.left}, ${poi.top})`}
       onClick={(e) => { e.stopPropagation(); onClick && onClick(poi); }}
       onMouseDown={handleMouseDown}
+      onContextMenu={handleContextMenu}
       style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
       className="poi-marker"
     >
@@ -285,6 +291,134 @@ const WorkSiteModal = ({ hex, coord, onSelect, onClose }) => {
   );
 };
 
+// Context Menu component
+const ContextMenu = ({ x, y, items, onClose }) => {
+  useEffect(() => {
+    const handleClick = () => onClose();
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, [onClose]);
+  
+  return (
+    <div 
+      className="fixed z-[100] bg-gray-900/95 border border-yellow-600/30 rounded-lg shadow-xl py-1 min-w-[180px]"
+      style={{ left: x, top: y }}
+    >
+      {items.map((item, idx) => (
+        item.separator ? (
+          <div key={idx} className="border-t border-white/10 my-1" />
+        ) : (
+          <button
+            key={idx}
+            onClick={() => { item.action(); onClose(); }}
+            className="w-full px-4 py-2 text-left text-sm hover:bg-yellow-600/20 flex items-center gap-2 text-gray-200 hover:text-yellow-400"
+          >
+            {item.icon && <item.icon size={16} />}
+            {item.label}
+          </button>
+        )
+      ))}
+    </div>
+  );
+};
+
+// POI Editor Modal
+const POIEditorModal = ({ poi, isNew, onSave, onDelete, onClose }) => {
+  const [title, setTitle] = useState(poi?.title || '');
+  const [poiType, setPOIType] = useState(poi?.type || 'camp');
+  const [category, setCategory] = useState(poi?.elementType || 'building');
+  
+  const categories = [
+    { id: 'building', label: 'Buildings' },
+    { id: 'resources', label: 'Resources' },
+    { id: 'misc', label: 'Misc' },
+    { id: 'armies', label: 'Armies' },
+  ];
+  
+  const typesByCategory = {
+    building: ['camp', 'cabane', 'sign', 'village', 'dolmen', 'mine', 'lake', 'swamp', 'hill', 'house', 'ruin'],
+    resources: ['mushroom', 'deadtree', 'tree', 'mine', 'farm', 'footmen'],
+    misc: ['lizard', 'battle', 'bridge', 'rock', 'farm'],
+    armies: ['lizard'],
+  };
+  
+  const handleSave = () => {
+    onSave({
+      ...poi,
+      title,
+      type: poiType,
+      elementType: category,
+    });
+  };
+  
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
+      <div className="bg-gray-900/95 border border-yellow-600/30 rounded-lg p-6 max-w-md w-full">
+        <h3 className="text-xl font-semibold text-yellow-400 mb-4">
+          {isNew ? 'Add New Marker' : 'Edit Marker'}
+        </h3>
+        
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">Category</label>
+            <select 
+              value={category}
+              onChange={(e) => {
+                setCategory(e.target.value);
+                setPOIType(typesByCategory[e.target.value][0]);
+              }}
+              className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white"
+            >
+              {categories.map(cat => (
+                <option key={cat.id} value={cat.id}>{cat.label}</option>
+              ))}
+            </select>
+          </div>
+          
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">Icon Type</label>
+            <select 
+              value={poiType}
+              onChange={(e) => setPOIType(e.target.value)}
+              className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white"
+            >
+              {typesByCategory[category]?.map(type => (
+                <option key={type} value={type}>
+                  {POI_TYPES[type]?.label || type}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">Title / Notes</label>
+            <textarea 
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white h-24"
+              placeholder="Enter description or notes..."
+            />
+          </div>
+        </div>
+        
+        <div className="flex gap-2 mt-6">
+          <button onClick={handleSave} className="flex-1 bg-yellow-600 hover:bg-yellow-500 text-black font-medium py-2 px-4 rounded">
+            {isNew ? 'Add Marker' : 'Save Changes'}
+          </button>
+          {!isNew && onDelete && (
+            <button onClick={onDelete} className="bg-red-600 hover:bg-red-500 text-white py-2 px-4 rounded">
+              <Trash2 size={18} />
+            </button>
+          )}
+          <button onClick={onClose} className="bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Main Stolen Lands Map component
 export default function StolenLandsMap({
   hexes = {},
@@ -301,6 +435,11 @@ export default function StolenLandsMap({
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const [showWorkSiteModal, setShowWorkSiteModal] = useState(false);
   const [draggingPOI, setDraggingPOI] = useState(null);
+  const [contextMenu, setContextMenu] = useState(null); // { x, y, type, target }
+  const [poiEditor, setPOIEditor] = useState(null); // { poi, isNew, position }
+  const [visibilityFilters, setVisibilityFilters] = useState({
+    building: true, resources: true, misc: true, armies: true
+  });
   const [poiPositions, setPOIPositions] = useState(() => {
     // Try to load from localStorage first
     const saved = localStorage.getItem('kingdomManager_poiPositions');
@@ -366,6 +505,100 @@ export default function StolenLandsMap({
     }
     setDraggingPOI(null);
   }, [draggingPOI, poiPositions, onPOIUpdate]);
+  
+  // Handle right-click context menu
+  const handleContextMenu = useCallback((e) => {
+    e.preventDefault();
+    
+    const svg = svgRef.current;
+    if (!svg) return;
+    
+    // Convert screen coords to SVG coords
+    const pt = svg.createSVGPoint();
+    pt.x = e.clientX;
+    pt.y = e.clientY;
+    const svgPt = pt.matrixTransform(svg.getScreenCTM().inverse());
+    
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      svgX: svgPt.x,
+      svgY: svgPt.y,
+      type: 'map', // Could be 'map', 'hex', or 'poi' depending on target
+    });
+  }, []);
+  
+  // Handle POI right-click
+  const handlePOIContextMenu = useCallback((e, poi) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      type: 'poi',
+      target: poi,
+    });
+  }, []);
+  
+  // Add new POI
+  const handleAddPOI = useCallback((position) => {
+    setPOIEditor({
+      poi: {
+        id: `poi-${Date.now()}`,
+        type: 'camp',
+        elementType: 'building',
+        title: '',
+        left: position.x,
+        top: position.y,
+        faction: 'None',
+      },
+      isNew: true,
+    });
+  }, []);
+  
+  // Edit existing POI
+  const handleEditPOI = useCallback((poi) => {
+    setPOIEditor({ poi, isNew: false });
+  }, []);
+  
+  // Save POI (new or edited)
+  const handleSavePOI = useCallback((updatedPOI) => {
+    setPOIPositions(prev => {
+      const exists = prev.find(p => p.id === updatedPOI.id);
+      if (exists) {
+        return prev.map(p => p.id === updatedPOI.id ? updatedPOI : p);
+      } else {
+        return [...prev, updatedPOI];
+      }
+    });
+    setPOIEditor(null);
+  }, []);
+  
+  // Delete POI
+  const handleDeletePOI = useCallback((poiId) => {
+    setPOIPositions(prev => prev.filter(p => p.id !== poiId));
+    setPOIEditor(null);
+    setSelectedPOI(null);
+  }, []);
+  
+  // Get context menu items based on type
+  const getContextMenuItems = useCallback(() => {
+    if (!contextMenu) return [];
+    
+    if (contextMenu.type === 'poi') {
+      return [
+        { icon: Edit, label: 'Edit Marker', action: () => handleEditPOI(contextMenu.target) },
+        { icon: Trash2, label: 'Delete Marker', action: () => handleDeletePOI(contextMenu.target.id) },
+      ];
+    }
+    
+    // Map context menu
+    return [
+      { icon: Plus, label: 'Add Marker Here', action: () => handleAddPOI({ x: contextMenu.svgX, y: contextMenu.svgY }) },
+      { separator: true },
+      { icon: Navigation, label: 'Move Player Here', action: () => console.log('TODO: Move player') },
+    ];
+  }, [contextMenu, handleEditPOI, handleDeletePOI, handleAddPOI]);
   
   // Handle hex click
   const handleHexClick = useCallback((hex, coord) => {
@@ -496,6 +729,7 @@ export default function StolenLandsMap({
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
         onWheel={handleWheel}
+        onContextMenu={handleContextMenu}
         style={{ cursor: draggingPOI ? 'grabbing' : isPanning ? 'grabbing' : 'grab' }}
         preserveAspectRatio="xMidYMid slice"
       >
@@ -521,16 +755,19 @@ export default function StolenLandsMap({
           />
         ))}
         
-        {/* POI Markers - draggable */}
-        {poiPositions.map((poi) => (
-          <POIMarker
-            key={poi.id}
-            poi={poi}
-            onClick={handlePOIClick}
-            onDragStart={handlePOIDragStart}
-            isDragging={draggingPOI?.id === poi.id}
-          />
-        ))}
+        {/* POI Markers - draggable, filtered by visibility */}
+        {poiPositions
+          .filter(poi => visibilityFilters[poi.elementType] !== false)
+          .map((poi) => (
+            <POIMarker
+              key={poi.id}
+              poi={poi}
+              onClick={handlePOIClick}
+              onDragStart={handlePOIDragStart}
+              onContextMenu={handlePOIContextMenu}
+              isDragging={draggingPOI?.id === poi.id}
+            />
+          ))}
       </svg>
       
       {/* Hex Info Panel */}
@@ -567,6 +804,52 @@ export default function StolenLandsMap({
           coord={selectedCoord}
           onSelect={handleWorkSiteSelect}
           onClose={() => setShowWorkSiteModal(false)}
+        />
+      )}
+      
+      {/* Visibility Toggles */}
+      <div className="absolute top-4 right-4 z-40 bg-gray-900/90 rounded-lg p-3 border border-white/10">
+        <div className="text-xs text-gray-400 mb-2 flex items-center gap-1">
+          <Eye size={12} /> Visibility
+        </div>
+        <div className="space-y-1">
+          {[
+            { id: 'building', label: 'Buildings' },
+            { id: 'resources', label: 'Resources' },
+            { id: 'misc', label: 'Misc' },
+            { id: 'armies', label: 'Armies' },
+          ].map(cat => (
+            <label key={cat.id} className="flex items-center gap-2 text-xs cursor-pointer">
+              <input
+                type="checkbox"
+                checked={visibilityFilters[cat.id]}
+                onChange={(e) => setVisibilityFilters(prev => ({ ...prev, [cat.id]: e.target.checked }))}
+                className="rounded"
+              />
+              <span className={visibilityFilters[cat.id] ? 'text-white' : 'text-gray-500'}>{cat.label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+      
+      {/* Context Menu */}
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          items={getContextMenuItems()}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
+      
+      {/* POI Editor Modal */}
+      {poiEditor && (
+        <POIEditorModal
+          poi={poiEditor.poi}
+          isNew={poiEditor.isNew}
+          onSave={handleSavePOI}
+          onDelete={poiEditor.isNew ? null : () => handleDeletePOI(poiEditor.poi.id)}
+          onClose={() => setPOIEditor(null)}
         />
       )}
     </div>
