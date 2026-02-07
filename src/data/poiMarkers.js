@@ -29,6 +29,11 @@ export const POI_TYPES = {
   
   // Creatures & Forces
   lizard: { icon: 'Ghost', color: '#2E8B57', label: 'Creature Lair' },
+  bandit: { icon: 'Skull', color: '#8B0000', label: 'Bandit Camp' },
+  monster: { icon: 'Ghost', color: '#4B0082', label: 'Monster Den' },
+  enemy: { icon: 'Swords', color: '#DC143C', label: 'Enemy Force' },
+  friendly: { icon: 'Users', color: '#4169E1', label: 'Friendly Force' },
+  patrol: { icon: 'Footprints', color: '#228B22', label: 'Patrol Route' },
 };
 
 // All POI markers from David's map (buildings, resources, misc, armies combined)
