@@ -1,9 +1,10 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { 
   Crown, Users, Coins, TreePine, Gem, Wheat, Mountain, Hammer,
   Shield, BookOpen, Sword, Calendar, Plus, Save, Download, Upload,
   Home, LayoutDashboard, Map, History, Settings, ChevronRight, Dice6,
-  AlertTriangle, CheckCircle, XCircle, TrendingUp, TrendingDown
+  AlertTriangle, CheckCircle, XCircle, TrendingUp, TrendingDown,
+  ChevronDown, Image, Grid3X3, Hexagon
 } from 'lucide-react';
 import { 
   getSizeData, getControlDC, ABILITIES, SKILLS, ALL_SKILLS,
@@ -186,6 +187,35 @@ export default function KingdomManager() {
   const [diceResult, setDiceResult] = useState(null);
   const [showActivityModal, setShowActivityModal] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState(null);
+  
+  // Multi-map system
+  const [selectedMapId, setSelectedMapId] = useState('kingdom'); // 'kingdom' or custom map id
+  const [customMaps, setCustomMaps] = useState(() => {
+    const saved = localStorage.getItem('kingdomManager_customMaps');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) { console.warn('Failed to load custom maps'); }
+    }
+    return [];
+  });
+  const [showMapDropdown, setShowMapDropdown] = useState(false);
+  const [showAddMapModal, setShowAddMapModal] = useState(false);
+
+  // Save custom maps to localStorage when they change
+  useEffect(() => {
+    localStorage.setItem('kingdomManager_customMaps', JSON.stringify(customMaps));
+  }, [customMaps]);
+  
+  // Close dropdown when clicking outside
+  const mapDropdownRef = useRef(null);
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (mapDropdownRef.current && !mapDropdownRef.current.contains(e.target)) {
+        setShowMapDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const sizeData = getSizeData(state.kingdom.hexes);
   const controlDC = getControlDC(state.kingdom.level) + sizeData.dcMod;
@@ -501,42 +531,144 @@ export default function KingdomManager() {
     addLog(`Hex ${updatedHex.coord.toUpperCase()}: ${updatedHex.status}`, 'success');
   }, [addLog]);
 
-  const renderMap = () => (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-yellow-400 flex items-center gap-2">
-          <Map className="w-6 h-6" /> Kingdom Map
-        </h2>
-        <div className="text-sm text-gray-400">
-          {Object.values(state.hexMap).filter(h => h.status === 'claimed').length} hexes claimed
+  const renderMap = () => {
+    // Kingdom Map (Stolen Lands)
+    if (selectedMapId === 'kingdom') {
+      return (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-yellow-400 flex items-center gap-2">
+              <Map className="w-6 h-6" /> Kingdom Map
+            </h2>
+            <div className="text-sm text-gray-400">
+              {Object.values(state.hexMap).filter(h => h.status === 'claimed').length} hexes claimed
+            </div>
+          </div>
+          <div className="h-[700px]">
+            <StolenLandsMap
+              hexes={state.hexMap}
+              onHexUpdate={handleHexUpdate}
+              kingdomName={state.kingdom.name}
+              kingdomColor="#3333f9"
+            />
+          </div>
         </div>
-      </div>
-      <div className="h-[700px]">
-        <StolenLandsMap
-          hexes={state.hexMap}
-          onHexUpdate={handleHexUpdate}
-          kingdomName={state.kingdom.name}
-          kingdomColor="#3333f9"
-        />
-      </div>
-    </div>
-  );
+      );
+    }
+    
+    // Custom Map
+    const customMap = customMaps.find(m => m.id === selectedMapId);
+    if (!customMap) {
+      return <div className="text-gray-400">Map not found</div>;
+    }
+    
+    return (
+      <CustomMapViewer
+        map={customMap}
+        onUpdate={(updatedMap) => {
+          setCustomMaps(prev => prev.map(m => m.id === updatedMap.id ? updatedMap : m));
+        }}
+        onDelete={() => {
+          setCustomMaps(prev => prev.filter(m => m.id !== customMap.id));
+          setSelectedMapId('kingdom');
+        }}
+      />
+    );
+  };
 
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'map', label: 'Map', icon: Map },
     { id: 'leadership', label: 'Leadership', icon: Users },
     { id: 'activities', label: 'Activities', icon: Hammer },
     { id: 'settlements', label: 'Settlements', icon: Home },
     { id: 'log', label: 'Log', icon: History },
   ];
+  
+  // Get current map name for dropdown
+  const currentMapName = selectedMapId === 'kingdom' 
+    ? 'Kingdom Map' 
+    : customMaps.find(m => m.id === selectedMapId)?.name || 'Map';
 
   return (
     <div className="min-h-screen">
       <nav className="sticky top-0 z-50 bg-black/50 backdrop-blur-md border-b border-white/10">
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex items-center gap-1 overflow-x-auto py-2">
-            {tabs.map(tab => { const Icon = tab.icon; return (<button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all whitespace-nowrap ${activeTab === tab.id ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50' : 'hover:bg-white/5 text-gray-400'}`}><Icon className="w-4 h-4" />{tab.label}</button>); })}
+            {/* Dashboard tab */}
+            <button 
+              onClick={() => setActiveTab('dashboard')} 
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all whitespace-nowrap ${activeTab === 'dashboard' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50' : 'hover:bg-white/5 text-gray-400'}`}
+            >
+              <LayoutDashboard className="w-4 h-4" />Dashboard
+            </button>
+            
+            {/* Map dropdown */}
+            <div className="relative" ref={mapDropdownRef}>
+              <button 
+                onClick={() => { setShowMapDropdown(!showMapDropdown); }}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all whitespace-nowrap ${activeTab === 'map' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50' : 'hover:bg-white/5 text-gray-400'}`}
+              >
+                <Map className="w-4 h-4" />
+                {currentMapName}
+                <ChevronDown className={`w-3 h-3 transition-transform ${showMapDropdown ? 'rotate-180' : ''}`} />
+              </button>
+              
+              {showMapDropdown && (
+                <div className="absolute top-full left-0 mt-1 w-56 bg-gray-900/95 border border-yellow-600/30 rounded-lg shadow-xl py-1 z-50">
+                  {/* Kingdom Map */}
+                  <button
+                    onClick={() => { setSelectedMapId('kingdom'); setActiveTab('map'); setShowMapDropdown(false); }}
+                    className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 hover:bg-yellow-600/20 ${selectedMapId === 'kingdom' ? 'text-yellow-400' : 'text-gray-200'}`}
+                  >
+                    <Hexagon className="w-4 h-4" />
+                    Kingdom Map
+                    {selectedMapId === 'kingdom' && <CheckCircle className="w-3 h-3 ml-auto" />}
+                  </button>
+                  
+                  {/* Custom Maps */}
+                  {customMaps.length > 0 && (
+                    <>
+                      <div className="border-t border-white/10 my-1" />
+                      {customMaps.map(map => (
+                        <button
+                          key={map.id}
+                          onClick={() => { setSelectedMapId(map.id); setActiveTab('map'); setShowMapDropdown(false); }}
+                          className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 hover:bg-yellow-600/20 ${selectedMapId === map.id ? 'text-yellow-400' : 'text-gray-200'}`}
+                        >
+                          {map.gridType === 'hex' ? <Hexagon className="w-4 h-4" /> : <Grid3X3 className="w-4 h-4" />}
+                          {map.name}
+                          {selectedMapId === map.id && <CheckCircle className="w-3 h-3 ml-auto" />}
+                        </button>
+                      ))}
+                    </>
+                  )}
+                  
+                  {/* Add new map */}
+                  <div className="border-t border-white/10 my-1" />
+                  <button
+                    onClick={() => { setShowAddMapModal(true); setShowMapDropdown(false); }}
+                    className="w-full px-4 py-2 text-left text-sm flex items-center gap-2 hover:bg-yellow-600/20 text-green-400"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add New Map...
+                  </button>
+                </div>
+              )}
+            </div>
+            
+            {/* Other tabs */}
+            {tabs.filter(t => t.id !== 'dashboard').map(tab => { 
+              const Icon = tab.icon; 
+              return (
+                <button 
+                  key={tab.id} 
+                  onClick={() => setActiveTab(tab.id)} 
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all whitespace-nowrap ${activeTab === tab.id ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50' : 'hover:bg-white/5 text-gray-400'}`}
+                >
+                  <Icon className="w-4 h-4" />{tab.label}
+                </button>
+              ); 
+            })}
           </div>
         </div>
       </nav>
@@ -564,6 +696,393 @@ export default function KingdomManager() {
           </div>
         </div>
       )}
+      
+      {/* Add Map Modal */}
+      {showAddMapModal && (
+        <AddMapModal 
+          onClose={() => setShowAddMapModal(false)}
+          onAdd={(newMap) => {
+            setCustomMaps(prev => [...prev, newMap]);
+            setSelectedMapId(newMap.id);
+            setActiveTab('map');
+            setShowAddMapModal(false);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ============================================
+// ADD MAP MODAL COMPONENT
+// ============================================
+function AddMapModal({ onClose, onAdd }) {
+  const [name, setName] = useState('');
+  const [gridType, setGridType] = useState('square');
+  const [gridSize, setGridSize] = useState(50);
+  const [imageData, setImageData] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const fileInputRef = useRef(null);
+  
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setImageData(event.target.result);
+      setImagePreview(event.target.result);
+    };
+    reader.readAsDataURL(file);
+  };
+  
+  const handleCreate = () => {
+    if (!name.trim() || !imageData) return;
+    
+    const newMap = {
+      id: `map-${Date.now()}`,
+      name: name.trim(),
+      gridType,
+      gridSize,
+      imageData,
+      width: 0, // Will be set when image loads in viewer
+      height: 0,
+      pois: [],
+      fog: [], // Array of revealed cell coordinates
+      createdAt: new Date().toISOString(),
+    };
+    
+    onAdd(newMap);
+  };
+  
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-gray-900/95 border border-yellow-600/30 rounded-lg p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        <h3 className="text-xl font-semibold text-yellow-400 mb-4">Add New Map</h3>
+        
+        <div className="space-y-4">
+          {/* Map Name */}
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">Map Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g., Dungeon Level 1, Battle Map..."
+              className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white"
+            />
+          </div>
+          
+          {/* Image Upload */}
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">Map Image</label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="hidden"
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full bg-gray-800 border border-gray-700 border-dashed rounded px-3 py-4 text-gray-400 hover:border-yellow-500 hover:text-yellow-400 transition-colors flex items-center justify-center gap-2"
+            >
+              <Image className="w-5 h-5" />
+              {imagePreview ? 'Change Image...' : 'Upload Image (JPG, PNG, etc.)'}
+            </button>
+            {imagePreview && (
+              <div className="mt-2 rounded overflow-hidden border border-gray-700">
+                <img src={imagePreview} alt="Preview" className="w-full h-40 object-cover" />
+              </div>
+            )}
+          </div>
+          
+          {/* Grid Type */}
+          <div>
+            <label className="block text-sm text-gray-400 mb-2">Grid Type</label>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setGridType('square')}
+                className={`flex-1 px-3 py-2 rounded flex items-center justify-center gap-2 transition-colors ${
+                  gridType === 'square' 
+                    ? 'bg-yellow-600/30 border border-yellow-500 text-yellow-400' 
+                    : 'bg-gray-800 border border-gray-700 text-gray-400 hover:border-gray-600'
+                }`}
+              >
+                <Grid3X3 className="w-5 h-5" />
+                Square
+              </button>
+              <button
+                onClick={() => setGridType('hex')}
+                className={`flex-1 px-3 py-2 rounded flex items-center justify-center gap-2 transition-colors ${
+                  gridType === 'hex' 
+                    ? 'bg-yellow-600/30 border border-yellow-500 text-yellow-400' 
+                    : 'bg-gray-800 border border-gray-700 text-gray-400 hover:border-gray-600'
+                }`}
+              >
+                <Hexagon className="w-5 h-5" />
+                Hex
+              </button>
+            </div>
+          </div>
+          
+          {/* Grid Size */}
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">Grid Size (pixels per cell)</label>
+            <input
+              type="range"
+              min="20"
+              max="200"
+              value={gridSize}
+              onChange={(e) => setGridSize(Number(e.target.value))}
+              className="w-full"
+            />
+            <div className="text-center text-sm text-gray-400">{gridSize}px</div>
+          </div>
+        </div>
+        
+        <div className="flex gap-2 mt-6">
+          <button 
+            onClick={handleCreate}
+            disabled={!name.trim() || !imageData}
+            className={`flex-1 py-2 px-4 rounded font-medium transition-colors ${
+              name.trim() && imageData
+                ? 'bg-yellow-600 hover:bg-yellow-500 text-black'
+                : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+            }`}
+          >
+            Create Map
+          </button>
+          <button onClick={onClose} className="bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================
+// CUSTOM MAP VIEWER COMPONENT
+// ============================================
+function CustomMapViewer({ map, onUpdate, onDelete }) {
+  const [viewBox, setViewBox] = useState({ x: 0, y: 0, width: 800, height: 600 });
+  const [isPanning, setIsPanning] = useState(false);
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+  const [showGrid, setShowGrid] = useState(true);
+  const [showFog, setShowFog] = useState(true);
+  const [fogMode, setFogMode] = useState(null); // null, 'reveal', or 'hide'
+  const [imageDimensions, setImageDimensions] = useState({ width: 1000, height: 1000 });
+  const svgRef = useRef(null);
+  
+  // Load image dimensions
+  useEffect(() => {
+    const img = new window.Image();
+    img.onload = () => {
+      setImageDimensions({ width: img.width, height: img.height });
+      setViewBox({ x: 0, y: 0, width: Math.min(img.width, 1200), height: Math.min(img.height, 800) });
+    };
+    img.src = map.imageData;
+  }, [map.imageData]);
+  
+  // Generate grid cells
+  const gridCells = useMemo(() => {
+    const cells = [];
+    const { gridSize, gridType } = map;
+    const { width, height } = imageDimensions;
+    
+    if (gridType === 'square') {
+      const cols = Math.ceil(width / gridSize);
+      const rows = Math.ceil(height / gridSize);
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+          cells.push({
+            id: `${col}-${row}`,
+            x: col * gridSize,
+            y: row * gridSize,
+            col, row
+          });
+        }
+      }
+    }
+    // TODO: Add hex grid generation
+    return cells;
+  }, [map.gridSize, map.gridType, imageDimensions]);
+  
+  // Check if a cell is revealed (not in fog)
+  const isCellRevealed = (cellId) => map.fog?.includes(cellId) ?? false;
+  
+  // Handle cell click for fog of war
+  const handleCellClick = (cellId) => {
+    if (!fogMode) return;
+    
+    const isRevealed = isCellRevealed(cellId);
+    let newFog;
+    
+    if (fogMode === 'reveal' && !isRevealed) {
+      newFog = [...(map.fog || []), cellId];
+    } else if (fogMode === 'hide' && isRevealed) {
+      newFog = (map.fog || []).filter(id => id !== cellId);
+    } else {
+      return;
+    }
+    
+    onUpdate({ ...map, fog: newFog });
+  };
+  
+  // Zoom
+  const handleZoom = (delta) => {
+    setViewBox(prev => {
+      const factor = delta > 0 ? 1.25 : 0.8;
+      const newWidth = Math.max(200, Math.min(imageDimensions.width * 2, prev.width * factor));
+      const newHeight = Math.max(150, Math.min(imageDimensions.height * 2, prev.height * factor));
+      const dx = (prev.width - newWidth) / 2;
+      const dy = (prev.height - newHeight) / 2;
+      return { x: prev.x + dx, y: prev.y + dy, width: newWidth, height: newHeight };
+    });
+  };
+  
+  // Pan
+  const handleMouseDown = (e) => {
+    if (e.button === 0 && !fogMode) {
+      setIsPanning(true);
+      setPanStart({ x: e.clientX, y: e.clientY });
+    }
+  };
+  
+  const handleMouseMove = (e) => {
+    if (!isPanning || !svgRef.current) return;
+    const rect = svgRef.current.getBoundingClientRect();
+    const dx = (e.clientX - panStart.x) * (viewBox.width / rect.width);
+    const dy = (e.clientY - panStart.y) * (viewBox.height / rect.height);
+    setViewBox(prev => ({
+      ...prev,
+      x: Math.max(0, Math.min(imageDimensions.width - prev.width, prev.x - dx)),
+      y: Math.max(0, Math.min(imageDimensions.height - prev.height, prev.y - dy)),
+    }));
+    setPanStart({ x: e.clientX, y: e.clientY });
+  };
+  
+  const handleMouseUp = () => setIsPanning(false);
+  const handleWheel = (e) => { e.preventDefault(); handleZoom(e.deltaY); };
+  
+  return (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold text-yellow-400 flex items-center gap-2">
+          {map.gridType === 'hex' ? <Hexagon className="w-6 h-6" /> : <Grid3X3 className="w-6 h-6" />}
+          {map.name}
+        </h2>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => onDelete()}
+            className="text-red-400 hover:text-red-300 text-sm px-2 py-1"
+          >
+            Delete Map
+          </button>
+        </div>
+      </div>
+      
+      {/* Controls */}
+      <div className="flex items-center gap-4 flex-wrap">
+        <div className="flex items-center gap-2">
+          <button onClick={() => handleZoom(-1)} className="p-2 bg-gray-800 rounded hover:bg-gray-700">
+            <Plus className="w-4 h-4" />
+          </button>
+          <button onClick={() => handleZoom(1)} className="p-2 bg-gray-800 rounded hover:bg-gray-700">
+            <span className="w-4 h-4 block text-center leading-4">−</span>
+          </button>
+        </div>
+        
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={showGrid} onChange={(e) => setShowGrid(e.target.checked)} />
+          Show Grid
+        </label>
+        
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={showFog} onChange={(e) => setShowFog(e.target.checked)} />
+          Fog of War
+        </label>
+        
+        <div className="flex items-center gap-1 text-sm">
+          <span className="text-gray-400 mr-1">Fog:</span>
+          <button
+            onClick={() => setFogMode(fogMode === 'reveal' ? null : 'reveal')}
+            className={`px-2 py-1 rounded ${fogMode === 'reveal' ? 'bg-green-600 text-white' : 'bg-gray-700 text-gray-300'}`}
+          >
+            Reveal
+          </button>
+          <button
+            onClick={() => setFogMode(fogMode === 'hide' ? null : 'hide')}
+            className={`px-2 py-1 rounded ${fogMode === 'hide' ? 'bg-red-600 text-white' : 'bg-gray-700 text-gray-300'}`}
+          >
+            Hide
+          </button>
+        </div>
+      </div>
+      
+      {/* Map Viewer */}
+      <div className="h-[650px] bg-black rounded-lg overflow-hidden border border-gray-700">
+        <svg
+          ref={svgRef}
+          viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`}
+          className="w-full h-full"
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+          onWheel={handleWheel}
+          style={{ cursor: fogMode ? 'crosshair' : isPanning ? 'grabbing' : 'grab' }}
+        >
+          {/* Map Image */}
+          <image
+            href={map.imageData}
+            x="0"
+            y="0"
+            width={imageDimensions.width}
+            height={imageDimensions.height}
+          />
+          
+          {/* Grid Overlay */}
+          {showGrid && map.gridType === 'square' && gridCells.map(cell => (
+            <rect
+              key={cell.id}
+              x={cell.x}
+              y={cell.y}
+              width={map.gridSize}
+              height={map.gridSize}
+              fill="transparent"
+              stroke="rgba(255,255,255,0.2)"
+              strokeWidth={1}
+              onClick={() => handleCellClick(cell.id)}
+              style={{ cursor: fogMode ? 'pointer' : 'inherit' }}
+            />
+          ))}
+          
+          {/* Fog of War */}
+          {showFog && gridCells.map(cell => {
+            const revealed = isCellRevealed(cell.id);
+            if (revealed) return null;
+            return (
+              <rect
+                key={`fog-${cell.id}`}
+                x={cell.x}
+                y={cell.y}
+                width={map.gridSize}
+                height={map.gridSize}
+                fill="rgba(0,0,0,0.85)"
+                onClick={() => handleCellClick(cell.id)}
+                style={{ cursor: fogMode ? 'pointer' : 'inherit' }}
+              />
+            );
+          })}
+        </svg>
+      </div>
+      
+      <div className="text-xs text-gray-500">
+        Grid: {map.gridSize}px {map.gridType} • {gridCells.length} cells • {map.fog?.length || 0} revealed
+      </div>
     </div>
   );
 }
