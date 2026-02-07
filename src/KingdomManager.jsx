@@ -26,6 +26,7 @@ import LevelUpModal from './components/LevelUpModal.jsx';
 import SkillsPanel from './components/SkillsPanel.jsx';
 import SettlementBuilder from './components/SettlementBuilder.jsx';
 import SettlementMap from './components/SettlementMap.jsx';
+import SettlementVisual from './components/SettlementVisual.jsx';
 import { checkLevelUp, checkMilestones, awardMilestones, getXPToNextLevel } from './engine/progressionEngine.js';
 import { HEX_STATUS, parseImportedMapData } from './utils/hexUtils.js';
 import { runFullUpkeep, checkLeadershipVacancies } from './engine/upkeepEngine.js';
@@ -812,7 +813,7 @@ export default function KingdomManager() {
           </div>
         ) : (
           state.settlements.map(settlement => (
-            <SettlementMap
+            <SettlementVisual
               key={settlement.id}
               settlement={settlement}
               state={state}
