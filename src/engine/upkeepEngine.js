@@ -5,6 +5,7 @@
 
 import { getSizeData, getControlDC } from '../data/reference.js';
 import { calculateTotalConsumption } from './structureEngine.js';
+import { getConsumptionModFromFeats, getRuinThresholdModFromFeats, getBonusRPFromFeats, getResourceDieModFromFeats } from './featEngine.js';
 
 /**
  * Step 1: Check for Leadership Vacancies
@@ -69,8 +70,10 @@ export const checkRuinThresholds = (state) => {
   const ruinThresholds = { ...(state.ruinThresholds || {}) };
   const abilities = { ...state.abilities };
   
+  const ruinThresholdMod = getRuinThresholdModFromFeats(state);
+  
   for (const [ruinType, currentValue] of Object.entries(ruin)) {
-    const threshold = ruinThresholds[ruinType] || 10;
+    const threshold = (ruinThresholds[ruinType] || 10) + ruinThresholdMod;
     
     if (currentValue >= threshold) {
       // Reduce corresponding ability
@@ -123,7 +126,11 @@ export const rollResourceDice = (state) => {
   const sizeData = getSizeData(hexes);
   
   const diceCount = level + 4;
-  const dieSides = sizeData.die;
+  const dieSteps = [4, 6, 8, 10, 12];
+  const baseDieIndex = dieSteps.indexOf(sizeData.die);
+  const dieModFromFeats = getResourceDieModFromFeats(state);
+  const adjustedDieIndex = Math.min(baseDieIndex + dieModFromFeats, dieSteps.length - 1);
+  const dieSides = dieSteps[adjustedDieIndex] || sizeData.die;
   
   // Roll the dice
   const rolls = [];
@@ -132,13 +139,24 @@ export const rollResourceDice = (state) => {
   }
   const total = rolls.reduce((a, b) => a + b, 0);
   
+  // Add bonus RP from feats (e.g., Capital Investment)
+  const bonusRP = getBonusRPFromFeats(state);
+  
+  if (dieModFromFeats > 0) {
+    log.push(`Resource die upgraded to d${dieSides} (Vast Territory feat)`);
+  }
   log.push(`Rolled ${diceCount}d${dieSides}: [${rolls.join(', ')}] = ${total} RP`);
+  if (bonusRP > 0) {
+    log.push(`+${bonusRP} bonus RP from feats`);
+  }
+  
+  const totalWithBonus = total + bonusRP;
   
   const newState = {
     ...state,
     resources: {
       ...state.resources,
-      rp: (state.resources?.rp || 0) + total,
+      rp: (state.resources?.rp || 0) + totalWithBonus,
     },
     turn: {
       ...state.turn,
@@ -209,8 +227,10 @@ export const collectFromWorkSites = (state) => {
 export const payConsumption = (state) => {
   const log = [];
   
-  // Calculate consumption dynamically from settlements
-  const consumption = calculateTotalConsumption(state);
+  // Calculate consumption dynamically from settlements, modified by feats
+  const baseConsumption = calculateTotalConsumption(state);
+  const consumptionMod = getConsumptionModFromFeats(state);
+  const consumption = Math.max(0, baseConsumption + consumptionMod);
   const food = state.resources?.food || 0;
   const resources = { ...state.resources };
   let unrestGain = 0;
