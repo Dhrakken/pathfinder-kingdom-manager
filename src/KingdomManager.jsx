@@ -871,8 +871,20 @@ function CustomMapViewer({ map, onUpdate, onDelete }) {
   const [showGrid, setShowGrid] = useState(true);
   const [showFog, setShowFog] = useState(true);
   const [fogMode, setFogMode] = useState(null); // null, 'reveal', or 'hide'
+  const [showGridSettings, setShowGridSettings] = useState(false);
   const [imageDimensions, setImageDimensions] = useState({ width: 1000, height: 1000 });
   const svgRef = useRef(null);
+  
+  // Local grid settings (editable)
+  const [gridSize, setGridSize] = useState(map.gridSize || 50);
+  const [gridOffsetX, setGridOffsetX] = useState(map.gridOffsetX || 0);
+  const [gridOffsetY, setGridOffsetY] = useState(map.gridOffsetY || 0);
+  
+  // Save grid settings to map
+  const saveGridSettings = () => {
+    onUpdate({ ...map, gridSize, gridOffsetX, gridOffsetY, fog: [] }); // Reset fog when grid changes
+    setShowGridSettings(false);
+  };
   
   // Load image dimensions
   useEffect(() => {
@@ -884,29 +896,35 @@ function CustomMapViewer({ map, onUpdate, onDelete }) {
     img.src = map.imageData;
   }, [map.imageData]);
   
-  // Generate grid cells
+  // Generate grid cells with offset
   const gridCells = useMemo(() => {
     const cells = [];
-    const { gridSize, gridType } = map;
     const { width, height } = imageDimensions;
+    const offsetX = gridOffsetX || 0;
+    const offsetY = gridOffsetY || 0;
     
-    if (gridType === 'square') {
-      const cols = Math.ceil(width / gridSize);
-      const rows = Math.ceil(height / gridSize);
+    if (map.gridType === 'square') {
+      const cols = Math.ceil((width - offsetX) / gridSize) + 1;
+      const rows = Math.ceil((height - offsetY) / gridSize) + 1;
       for (let row = 0; row < rows; row++) {
         for (let col = 0; col < cols; col++) {
-          cells.push({
-            id: `${col}-${row}`,
-            x: col * gridSize,
-            y: row * gridSize,
-            col, row
-          });
+          const x = offsetX + col * gridSize;
+          const y = offsetY + row * gridSize;
+          if (x < width && y < height) {
+            cells.push({
+              id: `${col}-${row}`,
+              x,
+              y,
+              col,
+              row
+            });
+          }
         }
       }
     }
     // TODO: Add hex grid generation
     return cells;
-  }, [map.gridSize, map.gridType, imageDimensions]);
+  }, [gridSize, gridOffsetX, gridOffsetY, map.gridType, imageDimensions]);
   
   // Check if a cell is revealed (not in fog)
   const isCellRevealed = (cellId) => map.fog?.includes(cellId) ?? false;
@@ -999,6 +1017,13 @@ function CustomMapViewer({ map, onUpdate, onDelete }) {
           Show Grid
         </label>
         
+        <button
+          onClick={() => setShowGridSettings(!showGridSettings)}
+          className={`px-2 py-1 rounded text-sm ${showGridSettings ? 'bg-yellow-600 text-black' : 'bg-gray-700 text-gray-300'}`}
+        >
+          ⚙️ Adjust Grid
+        </button>
+        
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={showFog} onChange={(e) => setShowFog(e.target.checked)} />
           Fog of War
@@ -1020,6 +1045,57 @@ function CustomMapViewer({ map, onUpdate, onDelete }) {
           </button>
         </div>
       </div>
+      
+      {/* Grid Settings Panel */}
+      {showGridSettings && (
+        <div className="bg-gray-800 rounded-lg p-4 border border-yellow-600/30">
+          <h4 className="text-sm font-medium text-yellow-400 mb-3">Grid Alignment</h4>
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs text-gray-400 mb-1">Size (px)</label>
+              <input
+                type="number"
+                value={gridSize}
+                onChange={(e) => setGridSize(Math.max(10, Number(e.target.value)))}
+                className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-400 mb-1">Offset X</label>
+              <input
+                type="number"
+                value={gridOffsetX}
+                onChange={(e) => setGridOffsetX(Number(e.target.value))}
+                className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-400 mb-1">Offset Y</label>
+              <input
+                type="number"
+                value={gridOffsetY}
+                onChange={(e) => setGridOffsetY(Number(e.target.value))}
+                className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm"
+              />
+            </div>
+          </div>
+          <div className="flex gap-2 mt-3">
+            <button
+              onClick={saveGridSettings}
+              className="px-3 py-1 bg-yellow-600 hover:bg-yellow-500 text-black rounded text-sm"
+            >
+              Save & Reset Fog
+            </button>
+            <button
+              onClick={() => setShowGridSettings(false)}
+              className="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-sm"
+            >
+              Cancel
+            </button>
+          </div>
+          <p className="text-xs text-gray-500 mt-2">Note: Changing grid resets fog of war</p>
+        </div>
+      )}
       
       {/* Map Viewer */}
       <div className="h-[650px] bg-black rounded-lg overflow-hidden border border-gray-700">
