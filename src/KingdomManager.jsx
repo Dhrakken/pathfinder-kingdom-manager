@@ -19,6 +19,7 @@ import {
 import HexMap from './components/HexMap.jsx';
 import StolenLandsMap from './components/StolenLandsMap.jsx';
 import ActivityModal from './components/ActivityModal.jsx';
+import TradeModal from './components/TradeModal.jsx';
 import { HEX_STATUS, parseImportedMapData } from './utils/hexUtils.js';
 import { runFullUpkeep, checkLeadershipVacancies } from './engine/upkeepEngine.js';
 import { runEventPhase, KINGDOM_EVENTS } from './engine/eventEngine.js';
@@ -195,6 +196,7 @@ export default function KingdomManager() {
   const [diceResult, setDiceResult] = useState(null);
   const [showActivityModal, setShowActivityModal] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState(null);
+  const [showTradeModal, setShowTradeModal] = useState(false);
   
   // Multi-map system
   const [selectedMapId, setSelectedMapId] = useState('kingdom'); // 'kingdom' or custom map id
@@ -446,20 +448,28 @@ export default function KingdomManager() {
             </button>
           )}
           {state.turn.phase === 'commerce' && !state.turn.phaseComplete.commerce && (
-            <button
-              onClick={() => {
-                const result = runCommercePhase(state);
-                setState(result.state);
-                for (const step of result.logs) {
-                  for (const msg of step.logs) {
-                    addLog(`[${step.step}] ${msg}`, msg.includes('Critical Failure') ? 'failure' : 'info');
+            <>
+              <button
+                onClick={() => {
+                  const result = runCommercePhase(state);
+                  setState(result.state);
+                  for (const step of result.logs) {
+                    for (const msg of step.logs) {
+                      addLog(`[${step.step}] ${msg}`, msg.includes('Critical Failure') ? 'failure' : 'info');
+                    }
                   }
-                }
-              }}
-              className="btn-royal flex items-center gap-2"
-            >
-              <Coins className="w-4 h-4" /> Collect Taxes
-            </button>
+                }}
+                className="btn-royal flex items-center gap-2"
+              >
+                <Coins className="w-4 h-4" /> Collect Taxes
+              </button>
+              <button
+                onClick={() => setShowTradeModal(true)}
+                className="btn-secondary flex items-center gap-2"
+              >
+                <TrendingUp className="w-4 h-4" /> Trade Commodities
+              </button>
+            </>
           )}
           {state.turn.phase === 'event' && !state.turn.phaseComplete.event && (
             <button
@@ -866,6 +876,16 @@ export default function KingdomManager() {
           onExecute={(newState) => {
             setState(newState);
           }}
+          onLog={addLog}
+        />
+      )}
+      
+      {/* Trade Modal */}
+      {showTradeModal && (
+        <TradeModal
+          state={state}
+          onClose={() => setShowTradeModal(false)}
+          onTrade={(newState) => setState(newState)}
           onLog={addLog}
         />
       )}
