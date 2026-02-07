@@ -322,13 +322,26 @@ export default function KingdomManager() {
   }, [getSkillMod]);
 
   const exportState = () => {
-    const dataStr = JSON.stringify(state, null, 2);
+    // Gather all data including localStorage map data
+    const exportData = {
+      version: '1.0',
+      exportedAt: new Date().toISOString(),
+      kingdom: state,
+      mapData: {
+        poiPositions: JSON.parse(localStorage.getItem('kingdomManager_poiPositions') || '[]'),
+        partyPosition: JSON.parse(localStorage.getItem('kingdomManager_partyPosition') || '{"x":4200,"y":1300}'),
+      },
+      customMaps: customMaps,
+    };
+    
+    const dataStr = JSON.stringify(exportData, null, 2);
     const blob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = `${state.kingdom.name.toLowerCase()}-turn-${state.turn.number}.json`;
     a.click();
+    addLog('Full kingdom state exported (includes map data)', 'success');
   };
 
   const importState = (event) => {
@@ -338,8 +351,30 @@ export default function KingdomManager() {
       reader.onload = (e) => {
         try {
           const imported = JSON.parse(e.target.result);
-          setState(imported);
-          addLog('Kingdom state imported successfully', 'success');
+          
+          // Handle new format with version
+          if (imported.version && imported.kingdom) {
+            setState(imported.kingdom);
+            
+            // Restore map data
+            if (imported.mapData?.poiPositions) {
+              localStorage.setItem('kingdomManager_poiPositions', JSON.stringify(imported.mapData.poiPositions));
+            }
+            if (imported.mapData?.partyPosition) {
+              localStorage.setItem('kingdomManager_partyPosition', JSON.stringify(imported.mapData.partyPosition));
+            }
+            
+            // Restore custom maps
+            if (imported.customMaps) {
+              setCustomMaps(imported.customMaps);
+            }
+            
+            addLog('Full kingdom state imported (includes map data)', 'success');
+          } else {
+            // Legacy format - just kingdom state
+            setState(imported);
+            addLog('Kingdom state imported (legacy format)', 'success');
+          }
         } catch (err) {
           addLog('Failed to import state: Invalid JSON', 'failure');
         }
