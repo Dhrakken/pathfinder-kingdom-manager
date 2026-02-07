@@ -591,31 +591,31 @@ export default function KingdomManager() {
 
   return (
     <div className="min-h-screen">
-      <nav className="sticky top-0 z-50 bg-black/50 backdrop-blur-md border-b border-white/10">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="flex items-center gap-1 overflow-x-auto py-2">
-            {/* Dashboard tab */}
+      <nav className="sticky top-0 z-50 bg-black/80 backdrop-blur-md border-b border-white/10">
+        <div className="max-w-6xl mx-auto px-4 py-2">
+          <div className="flex items-center gap-2">
+            {/* Dashboard */}
             <button 
               onClick={() => setActiveTab('dashboard')} 
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all whitespace-nowrap ${activeTab === 'dashboard' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50' : 'hover:bg-white/5 text-gray-400'}`}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${activeTab === 'dashboard' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50' : 'hover:bg-white/5 text-gray-400'}`}
             >
-              <LayoutDashboard className="w-4 h-4" />Dashboard
+              <LayoutDashboard className="w-4 h-4" />
+              <span className="hidden sm:inline">Dashboard</span>
             </button>
             
             {/* Map dropdown */}
             <div className="relative" ref={mapDropdownRef}>
               <button 
-                onClick={() => { setShowMapDropdown(!showMapDropdown); }}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all whitespace-nowrap ${activeTab === 'map' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50' : 'hover:bg-white/5 text-gray-400'}`}
+                onClick={() => setShowMapDropdown(!showMapDropdown)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${activeTab === 'map' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50' : 'hover:bg-white/5 text-gray-400'}`}
               >
                 <Map className="w-4 h-4" />
-                {currentMapName}
+                <span className="hidden sm:inline">Map</span>
                 <ChevronDown className={`w-3 h-3 transition-transform ${showMapDropdown ? 'rotate-180' : ''}`} />
               </button>
               
               {showMapDropdown && (
-                <div className="absolute top-full left-0 mt-1 w-56 bg-gray-900/95 border border-yellow-600/30 rounded-lg shadow-xl py-1 z-[100]">
-                  {/* Kingdom Map */}
+                <div className="absolute top-full left-0 mt-1 w-56 bg-gray-900 border border-yellow-600/30 rounded-lg shadow-2xl py-1 z-[200]">
                   <button
                     onClick={() => { setSelectedMapId('kingdom'); setActiveTab('map'); setShowMapDropdown(false); }}
                     className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 hover:bg-yellow-600/20 ${selectedMapId === 'kingdom' ? 'text-yellow-400' : 'text-gray-200'}`}
@@ -625,7 +625,6 @@ export default function KingdomManager() {
                     {selectedMapId === 'kingdom' && <CheckCircle className="w-3 h-3 ml-auto" />}
                   </button>
                   
-                  {/* Custom Maps */}
                   {customMaps.length > 0 && (
                     <>
                       <div className="border-t border-white/10 my-1" />
@@ -643,7 +642,6 @@ export default function KingdomManager() {
                     </>
                   )}
                   
-                  {/* Add new map */}
                   <div className="border-t border-white/10 my-1" />
                   <button
                     onClick={() => { setShowAddMapModal(true); setShowMapDropdown(false); }}
@@ -663,9 +661,10 @@ export default function KingdomManager() {
                 <button 
                   key={tab.id} 
                   onClick={() => setActiveTab(tab.id)} 
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all whitespace-nowrap ${activeTab === tab.id ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50' : 'hover:bg-white/5 text-gray-400'}`}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${activeTab === tab.id ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50' : 'hover:bg-white/5 text-gray-400'}`}
                 >
-                  <Icon className="w-4 h-4" />{tab.label}
+                  <Icon className="w-4 h-4" />
+                  <span className="hidden sm:inline">{tab.label}</span>
                 </button>
               ); 
             })}
