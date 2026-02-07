@@ -4,6 +4,7 @@
 // ============================================
 
 import { getSizeData, getControlDC } from '../data/reference.js';
+import { calculateTotalConsumption } from './structureEngine.js';
 
 /**
  * Step 1: Check for Leadership Vacancies
@@ -200,6 +201,7 @@ export const collectFromWorkSites = (state) => {
 /**
  * Step 5: Pay Consumption
  * The kingdom must pay its consumption in Food.
+ * Consumption is calculated dynamically from settlements and structures.
  * If insufficient Food:
  * - Set Food to 0
  * - Gain 1d4 Unrest per missing Food
@@ -207,7 +209,8 @@ export const collectFromWorkSites = (state) => {
 export const payConsumption = (state) => {
   const log = [];
   
-  const consumption = state.consumption || 0;
+  // Calculate consumption dynamically from settlements
+  const consumption = calculateTotalConsumption(state);
   const food = state.resources?.food || 0;
   const resources = { ...state.resources };
   let unrestGain = 0;
@@ -232,12 +235,14 @@ export const payConsumption = (state) => {
   
   const newState = {
     ...state,
+    consumption, // Update the stored consumption value
     resources,
     unrest: Math.max(0, (state.unrest || 0) + unrestGain),
   };
   
   return {
     state: newState,
+    consumption,
     unrestGain,
     shortage: consumption > food ? consumption - food : 0,
     log,

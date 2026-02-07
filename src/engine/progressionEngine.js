@@ -127,10 +127,11 @@ export const checkLevelUp = (state) => {
  * Apply level up to state
  * Returns new state with level increased
  * Level up grants:
- * - +1 to one ability score
+ * - +2 to one ability score
  * - Train one skill (or upgrade existing)
+ * - Kingdom feat (at level 1 and even levels)
  */
-export const applyLevelUp = (state, abilityBoost, skillTraining) => {
+export const applyLevelUp = (state, abilityBoost, skillTraining, featId = null) => {
   const newLevel = (state.kingdom?.level || 1) + 1;
   
   const newState = {
@@ -161,6 +162,11 @@ export const applyLevelUp = (state, abilityBoost, skillTraining) => {
       ...state.skillProficiencies,
       [skillTraining]: newProf,
     };
+  }
+  
+  // Apply kingdom feat
+  if (featId) {
+    newState.kingdomFeats = [...(state.kingdomFeats || []), featId];
   }
   
   return newState;

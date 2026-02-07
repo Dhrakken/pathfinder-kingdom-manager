@@ -4,7 +4,7 @@ import {
   Shield, BookOpen, Sword, Calendar, Plus, Save, Download, Upload,
   Home, LayoutDashboard, Map, History, Settings, ChevronRight, Dice6,
   AlertTriangle, CheckCircle, XCircle, TrendingUp, TrendingDown,
-  ChevronDown, Image, Grid, Hexagon, Building2
+  ChevronDown, Image, Grid, Hexagon, Building2, Award
 } from 'lucide-react';
 import { 
   getSizeData, getControlDC, ABILITIES, SKILLS, ALL_SKILLS,
@@ -16,6 +16,7 @@ import {
   LEADERSHIP_ACTIVITIES, REGION_ACTIVITIES, CIVIC_ACTIVITIES, 
   COMMERCE_ACTIVITIES, getActivityById 
 } from './data/activities.js';
+import { getFeatById } from './data/feats.js';
 import HexMap from './components/HexMap.jsx';
 import StolenLandsMap from './components/StolenLandsMap.jsx';
 import ActivityModal from './components/ActivityModal.jsx';
@@ -29,6 +30,7 @@ import { HEX_STATUS, parseImportedMapData } from './utils/hexUtils.js';
 import { runFullUpkeep, checkLeadershipVacancies } from './engine/upkeepEngine.js';
 import { runEventPhase, KINGDOM_EVENTS } from './engine/eventEngine.js';
 import { runCommercePhase, tradeCommodities, COMMODITY_BASE_VALUES } from './engine/commerceEngine.js';
+import { calculateTotalConsumption } from './engine/structureEngine.js';
 
 // ============================================
 // PHASES
@@ -102,6 +104,8 @@ const createInitialState = () => {
     },
     unrest: 1,
     consumption: 2,
+    kingdomFeats: [], // Acquired kingdom feats (feat ids)
+    achievedMilestones: [], // Achieved milestone ids
     workSites: {
       farmlands: 2,
       lumberCamps: 1,
@@ -286,17 +290,21 @@ export default function KingdomManager() {
     addLog(`Collected from work sites: +${farmlands} Food, +${lumberCamps} Lumber, +${mines} Ore, +${quarries} Stone`, 'success');
   }, [state.workSites, addLog]);
 
+  // Calculate consumption dynamically from settlements
+  const currentConsumption = useMemo(() => calculateTotalConsumption(state), [state.settlements, state.workSites]);
+
   const payConsumption = useCallback(() => {
-    if (state.resources.food >= state.consumption) {
-      setState(prev => ({ ...prev, resources: { ...prev.resources, food: prev.resources.food - prev.consumption } }));
-      addLog(`Paid consumption: -${state.consumption} Food`, 'success');
+    const consumption = currentConsumption;
+    if (state.resources.food >= consumption) {
+      setState(prev => ({ ...prev, consumption, resources: { ...prev.resources, food: prev.resources.food - consumption } }));
+      addLog(`Paid consumption: -${consumption} Food`, 'success');
     } else {
-      const shortage = state.consumption - state.resources.food;
+      const shortage = consumption - state.resources.food;
       const unrestGain = rollDie(4);
-      setState(prev => ({ ...prev, resources: { ...prev.resources, food: 0 }, unrest: prev.unrest + unrestGain }));
+      setState(prev => ({ ...prev, consumption, resources: { ...prev.resources, food: 0 }, unrest: prev.unrest + unrestGain }));
       addLog(`Food shortage! Missing ${shortage} Food. +${unrestGain} Unrest`, 'failure');
     }
-  }, [state.resources.food, state.consumption, addLog]);
+  }, [state.resources.food, currentConsumption, addLog]);
 
   const advancePhase = useCallback(() => {
     const phaseOrder = ['upkeep', 'commerce', 'activity', 'event'];
@@ -582,7 +590,7 @@ export default function KingdomManager() {
           {state.turn.phase === 'upkeep' && !state.turn.phaseComplete.upkeep && (
             <div className="mt-3 flex gap-2">
               <button onClick={collectWorkSites} className="btn-secondary flex-1">Collect Work Sites</button>
-              <button onClick={payConsumption} className="btn-secondary flex-1">Pay Consumption ({state.consumption})</button>
+              <button onClick={payConsumption} className="btn-secondary flex-1">Pay Consumption ({currentConsumption})</button>
             </div>
           )}
           {state.turn.phaseComplete.upkeep && (
@@ -605,6 +613,27 @@ export default function KingdomManager() {
           <div className="grid grid-cols-4 gap-2">{['Corruption', 'Crime', 'Decay', 'Strife'].map(type => (<div key={type} className="text-center"><div className="text-xs text-gray-400">{type}</div><div className="text-lg font-bold">{state.ruin[type]}</div></div>))}</div>
         </div>
       </div>
+
+      {/* Kingdom Feats */}
+      {(state.kingdomFeats?.length > 0) && (
+        <div className="glass-card p-4">
+          <h3 className="text-yellow-400 font-semibold mb-3 flex items-center gap-2">
+            <Award className="w-5 h-5" /> Kingdom Feats
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {state.kingdomFeats.map(featId => {
+              const feat = getFeatById(featId);
+              if (!feat) return null;
+              return (
+                <div key={feat.id} className="p-3 bg-purple-900/20 border border-purple-500/30 rounded">
+                  <div className="font-medium text-purple-300">{feat.name}</div>
+                  <div className="text-xs text-gray-400 mt-1">{feat.benefit}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="glass-card p-4">
         <h3 className="text-yellow-400 font-semibold mb-3">Quick Actions</h3>
