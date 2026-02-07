@@ -80,7 +80,7 @@ const POIMarker = ({ poi, onClick, onDragStart, onContextMenu, isDragging }) => 
 };
 
 // Single hex overlay
-const HexOverlay = ({ coord, hex, position, isSelected, onClick, getFactionColor, defaultColor }) => {
+const HexOverlay = ({ coord, hex, position, isSelected, onClick, onContextMenu, getFactionColor, defaultColor }) => {
   if (!position) return null;
   
   // Position is top-left of hex bounding box (from David's tool)
@@ -123,7 +123,11 @@ const HexOverlay = ({ coord, hex, position, isSelected, onClick, getFactionColor
   const points = getPointyTopHexPoints(x, y);
   
   return (
-    <g onClick={() => onClick && onClick(hex, coord)} style={{ cursor: 'pointer' }}>
+    <g 
+      onClick={() => onClick && onClick(hex, coord)} 
+      onContextMenu={(e) => onContextMenu && onContextMenu(e, hex, coord)}
+      style={{ cursor: 'pointer' }}
+    >
       {/* Hex overlay */}
       <polygon
         points={points}
@@ -310,14 +314,22 @@ const ContextMenu = ({ x, y, items, onClose }) => {
       {items.map((item, idx) => (
         item.separator ? (
           <div key={idx} className="border-t border-white/10 my-1" />
+        ) : item.disabled ? (
+          <div key={idx} className="px-4 py-1 text-xs text-gray-500 uppercase tracking-wide">
+            {item.label}
+          </div>
         ) : (
           <button
             key={idx}
-            onClick={() => { item.action(); onClose(); }}
-            className="w-full px-4 py-2 text-left text-sm hover:bg-yellow-600/20 flex items-center gap-2 text-gray-200 hover:text-yellow-400"
+            onClick={() => { item.action?.(); onClose(); }}
+            className={`w-full px-4 py-2 text-left text-sm hover:bg-yellow-600/20 flex items-center gap-2 ${item.checked ? 'text-yellow-400' : 'text-gray-200 hover:text-yellow-400'}`}
           >
-            {item.icon && <item.icon size={16} />}
-            {item.label}
+            {item.color && (
+              <div className="w-3 h-3 rounded" style={{ background: item.color }} />
+            )}
+            {item.icon && !item.color && <item.icon size={16} />}
+            <span className="flex-1">{item.label}</span>
+            {item.checked && <span className="text-green-400">✓</span>}
           </button>
         )
       ))}
@@ -653,6 +665,19 @@ export default function StolenLandsMap({
     });
   }, []);
   
+  // Handle hex right-click
+  const handleHexContextMenu = useCallback((e, hex, coord) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      type: 'hex',
+      target: hex,
+      coord: coord,
+    });
+  }, []);
+  
   // Add new POI
   const handleAddPOI = useCallback((position) => {
     setPOIEditor({
@@ -705,13 +730,45 @@ export default function StolenLandsMap({
       ];
     }
     
-    // Map context menu
+    // Hex context menu
+    if (contextMenu.type === 'hex') {
+      const hex = contextMenu.target;
+      const coord = contextMenu.coord;
+      const items = [];
+      
+      // Status changes
+      if (hex?.status !== HEX_STATUS.EXPLORED && hex?.status !== HEX_STATUS.CLAIMED) {
+        items.push({ icon: Eye, label: 'Mark Explored', action: () => onHexUpdate && onHexUpdate({ ...hex, coord, status: HEX_STATUS.EXPLORED }) });
+      }
+      if (hex?.status === HEX_STATUS.EXPLORED) {
+        items.push({ icon: Flag, label: 'Claim Hex', action: () => onHexUpdate && onHexUpdate({ ...hex, coord, status: HEX_STATUS.CLAIMED, faction: '1' }) });
+      }
+      
+      // Faction assignment (for claimed hexes)
+      if (hex?.status === HEX_STATUS.CLAIMED && Object.keys(factions).length > 0) {
+        items.push({ separator: true });
+        items.push({ label: 'Assign to Faction:', disabled: true });
+        Object.values(factions).forEach(faction => {
+          items.push({
+            icon: Flag,
+            label: faction.name,
+            color: faction.color,
+            checked: hex?.faction === faction.id,
+            action: () => onHexUpdate && onHexUpdate({ ...hex, coord, faction: faction.id })
+          });
+        });
+      }
+      
+      return items;
+    }
+    
+    // Map context menu (empty space)
     return [
       { icon: Plus, label: 'Add Marker Here', action: () => handleAddPOI({ x: contextMenu.svgX, y: contextMenu.svgY }) },
       { separator: true },
       { icon: Navigation, label: 'Move Party Here', action: () => setPartyPosition({ x: contextMenu.svgX, y: contextMenu.svgY }) },
     ];
-  }, [contextMenu, handleEditPOI, handleDeletePOI, handleAddPOI]);
+  }, [contextMenu, handleEditPOI, handleDeletePOI, handleAddPOI, factions, onHexUpdate]);
   
   // Handle hex click
   const handleHexClick = useCallback((hex, coord) => {
@@ -880,6 +937,7 @@ export default function StolenLandsMap({
             position={position}
             isSelected={selectedCoord === coord}
             onClick={handleHexClick}
+            onContextMenu={handleHexContextMenu}
             getFactionColor={getFactionColor}
             defaultColor={getPlayerFactionColor()}
           />
