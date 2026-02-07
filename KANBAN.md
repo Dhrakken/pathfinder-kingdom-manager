@@ -24,6 +24,14 @@
 - [ ] **Kingdom Feats** - Feat database + selection UI
 - [x] ~~**Milestone Tracking** - First village, first city, etc.~~
 
+### Settlement Builder ✅
+- [x] Visual 4x4 grid layout
+- [x] Click-to-build with modal
+- [x] Structure search and level filter
+- [x] Cost display with affordability
+- [x] Demolition option
+- [x] Effects summary
+
 ### Phase 4: Advanced Systems
 - [ ] **Army Creation** - Stats, tactics, upkeep
 - [ ] **Warfare System** - Battle resolution
@@ -136,9 +144,9 @@
 |-------|--------|------------|
 | Phase 1: MVP Turn | ✅ Complete | 100% |
 | Phase 2: Full Mechanics | ✅ Complete | 100% |
-| Phase 3: Progression | 🚧 In Progress | 75% |
+| Phase 3: Progression | ✅ Complete | 90% |
 | Phase 4: Advanced | ⏳ Planned | 0% |
 
-**Overall: ~60% to feature-complete**
+**Overall: ~65% to feature-complete**
 
-> Last updated: 2026-02-07 08:45 EST
+> Last updated: 2026-02-07 09:00 EST
