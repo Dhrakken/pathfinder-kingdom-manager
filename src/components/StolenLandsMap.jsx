@@ -4,7 +4,7 @@ import {
   Mountain, TreePine, Tent, Store, MapPin, Building, Landmark, 
   Skull, Fish, Droplet, TreeDeciduous, Sparkles, Ghost,
   Swords, Footprints, Link2, Plus, Edit, Trash2, 
-  EyeOff, Users, Navigation, Crosshair, Pickaxe, Gem
+  EyeOff, Users, Navigation, Crosshair, Shovel, Gem
 } from 'lucide-react';
 import { HEX_POSITIONS, MAP_WIDTH, MAP_HEIGHT, HEX_WIDTH, HEX_HEIGHT } from '../data/hexPositions.js';
 import { HEX_STATUS, WORK_SITE_TYPES, TERRAIN_TYPES } from '../utils/hexUtils.js';
@@ -36,7 +36,7 @@ const getPointyTopHexPoints = (x, y) => {
 const POI_ICON_MAP = {
   Tent, Store, MapPin, Building, Landmark, Skull, Fish, Droplet, 
   TreeDeciduous, Sparkles, Ghost, Swords, Footprints, Link2,
-  Hammer, Home, Wheat, TreePine, Mountain, Flag, Pickaxe, Gem
+  Hammer, Home, Wheat, TreePine, Mountain, Flag, Shovel, Gem
 };
 
 // POI Marker component - now draggable

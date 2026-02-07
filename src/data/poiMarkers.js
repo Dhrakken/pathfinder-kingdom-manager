@@ -7,7 +7,7 @@ export const POI_TYPES = {
   house: { icon: 'Home', color: '#CD853F', label: 'House/Building' },
   camp: { icon: 'Tent', color: '#FF6B35', label: 'Camp' },
   cabane: { icon: 'Store', color: '#8B4513', label: 'Hut/Shack' },
-  mine: { icon: 'Pickaxe', color: '#708090', label: 'Mine' },
+  mine: { icon: 'Hammer', color: '#708090', label: 'Mine' },
   ruin: { icon: 'Skull', color: '#696969', label: 'Ruin/Dungeon' },
   dolmen: { icon: 'Landmark', color: '#6B5B95', label: 'Temple/Shrine' },
   
