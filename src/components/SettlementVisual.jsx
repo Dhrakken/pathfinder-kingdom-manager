@@ -17,95 +17,97 @@ const getTilePos = (index) => {
 };
 
 // Building definitions - which tiles make up each structure
-// Each building is a 2D array of tile indices (or null for empty)
-// Tile indices based on the tilemap layout
+// Tilemap is 12 columns × 11 rows (192×176px, 16×16 tiles)
+// Row 0-1: Trees, terrain  |  Row 2-4: Wooden houses (orange/brown roofs)
+// Row 5: Red brick & gray stone  |  Row 6-7: Castle walls & gates
+// Row 8: Water, props  |  Row 9-10: People
 const BUILDING_SPRITES = {
-  // Small houses (1 lot) - 2x2 tiles
+  // Small wooden houses (1 lot) - 2x2 tiles
   'houses': {
-    village: [[36, 37], [48, 49]], // Blue roof house
-    town: [[38, 39], [50, 51]], // Red roof house
-    city: [[40, 41], [52, 53]], // Brown stone house
+    village: [[24, 25], [36, 37]], // Orange roof wooden cottage
+    town: [[26, 27], [38, 39]], // Brown roof house
+    city: [[60, 61], [72, 73]], // Red brick house
   },
   'tenement': {
-    village: [[38, 39], [50, 51]],
-    town: [[40, 41], [52, 53]],
-    city: [[40, 41], [52, 53]],
+    village: [[26, 27], [38, 39]],
+    town: [[28, 29], [40, 41]],
+    city: [[62, 63], [74, 75]],
   },
   
-  // Inn/Tavern (1 lot) - 2x2 tiles with different roof
+  // Inn/Tavern (1 lot) - 2x2 with distinct look
   'inn': {
-    village: [[38, 39], [50, 51]],
-    town: [[26, 27], [38, 39]],
-    city: [[40, 41], [52, 53]],
+    village: [[30, 31], [42, 43]], // Wooden with different roof
+    town: [[28, 29], [40, 41]],
+    city: [[64, 65], [76, 77]], // Stone building
   },
   'tavern': {
-    village: [[38, 39], [50, 51]],
+    village: [[30, 31], [42, 43]],
     town: [[26, 27], [38, 39]],
-    city: [[40, 41], [52, 53]],
+    city: [[62, 63], [74, 75]],
   },
   
   // General Store / Shops
   'general-store': {
-    village: [[36, 37], [48, 49]],
-    town: [[38, 39], [50, 51]],
-    city: [[40, 41], [52, 53]],
+    village: [[24, 25], [36, 37]],
+    town: [[28, 29], [40, 41]],
+    city: [[60, 61], [72, 73]],
   },
   'marketplace': {
-    village: [[109, 110], [121, 122]],
-    town: [[109, 110], [121, 122]],
-    city: [[109, 110], [121, 122]],
+    village: [[32, 33], [44, 45]], // Stall-like structure
+    town: [[32, 33], [44, 45]],
+    city: [[32, 33], [44, 45]],
   },
   
-  // Town Hall (2 lots) - 4x2 tiles
+  // Town Hall (2 lots) - 4x2 tiles (wide building)
   'town-hall': {
-    village: [[36, 37, 36, 37], [48, 49, 48, 49]],
-    town: [[38, 39, 40, 41], [50, 51, 52, 53]],
+    village: [[24, 25, 26, 27], [36, 37, 38, 39]],
+    town: [[60, 61, 62, 63], [72, 73, 74, 75]],
     city: [[64, 65, 66, 67], [76, 77, 78, 79]],
   },
   
-  // Castle (4 lots) - 4x4 tiles  
+  // Castle (4 lots) - 4x4 tiles with castle walls
   'castle': {
-    village: [[64, 65, 66, 67], [76, 77, 78, 79], [88, 89, 90, 91], [100, 101, 102, 103]],
-    town: [[64, 65, 66, 67], [76, 77, 78, 79], [88, 89, 90, 91], [100, 101, 102, 103]],
-    city: [[64, 65, 66, 67], [76, 77, 78, 79], [88, 89, 90, 91], [100, 101, 102, 103]],
+    village: [[72, 73, 74, 75], [84, 85, 86, 87], [72, 73, 74, 75], [84, 85, 86, 87]],
+    town: [[72, 73, 74, 75], [84, 85, 86, 87], [72, 73, 74, 75], [84, 85, 86, 87]],
+    city: [[72, 73, 74, 75], [84, 85, 86, 87], [72, 73, 74, 75], [84, 85, 86, 87]],
   },
   
   // Shrine/Temple
   'shrine': {
-    village: [[36, 37], [48, 49]],
+    village: [[24, 25], [36, 37]],
     town: [[64, 65], [76, 77]],
     city: [[66, 67], [78, 79]],
   },
   'temple': {
-    village: [[64, 65], [76, 77]],
+    village: [[28, 29], [40, 41]],
     town: [[64, 65, 66], [76, 77, 78]],
     city: [[64, 65, 66, 67], [76, 77, 78, 79]],
   },
   
-  // Mill - has special windmill sprite
+  // Mill
   'mill': {
-    village: [[42, 43], [54, 55]],
-    town: [[42, 43], [54, 55]],
-    city: [[42, 43], [54, 55]],
+    village: [[34, 35], [46, 47]],
+    town: [[34, 35], [46, 47]],
+    city: [[34, 35], [46, 47]],
   },
   
-  // Walls/Fortifications
+  // Walls/Fortifications - use castle wall tiles
   'wooden-walls': {
-    village: [[58, 59], [70, 71]],
-    town: [[58, 59], [70, 71]],
-    city: [[58, 59], [70, 71]],
+    village: [[88, 89], [88, 89]], // Fence sections
+    town: [[88, 89], [88, 89]],
+    city: [[88, 89], [88, 89]],
   },
   'stone-walls': {
-    village: [[68, 69], [80, 81]],
-    town: [[68, 69], [80, 81]],
-    city: [[68, 69], [80, 81]],
+    village: [[72, 73], [84, 85]], // Stone wall sections  
+    town: [[72, 73], [84, 85]],
+    city: [[72, 73], [84, 85]],
   },
   
-  // Default fallback
+  // Default fallback - basic cottage
   'default': {
-    village: [[36, 37], [48, 49]],
-    town: [[38, 39], [50, 51]],
-    city: [[40, 41], [52, 53]],
+    village: [[24, 25], [36, 37]], // Orange roof cottage
+    town: [[60, 61], [72, 73]], // Red brick
+    city: [[64, 65], [76, 77]], // Stone
   },
 };
 
