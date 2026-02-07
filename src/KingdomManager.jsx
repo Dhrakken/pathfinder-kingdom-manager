@@ -22,6 +22,7 @@ import ActivityModal from './components/ActivityModal.jsx';
 import TradeModal from './components/TradeModal.jsx';
 import KingdomCreationWizard from './components/KingdomCreationWizard.jsx';
 import LevelUpModal from './components/LevelUpModal.jsx';
+import SkillsPanel from './components/SkillsPanel.jsx';
 import { checkLevelUp, checkMilestones, awardMilestones, getXPToNextLevel } from './engine/progressionEngine.js';
 import { HEX_STATUS, parseImportedMapData } from './utils/hexUtils.js';
 import { runFullUpkeep, checkLeadershipVacancies } from './engine/upkeepEngine.js';
@@ -778,6 +779,7 @@ export default function KingdomManager() {
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'leadership', label: 'Leadership', icon: Users },
     { id: 'activities', label: 'Activities', icon: Hammer },
+    { id: 'skills', label: 'Skills', icon: BookOpen },
     { id: 'settlements', label: 'Settlements', icon: Home },
     { id: 'log', label: 'Log', icon: History },
   ];
@@ -875,6 +877,13 @@ export default function KingdomManager() {
         {activeTab === 'map' && renderMap()}
         {activeTab === 'leadership' && renderLeadership()}
         {activeTab === 'activities' && renderActivities()}
+        {activeTab === 'skills' && (
+          <SkillsPanel 
+            state={state} 
+            onStateChange={setState} 
+            onLog={addLog} 
+          />
+        )}
         {activeTab === 'settlements' && renderSettlements()}
         {activeTab === 'log' && renderTurnLog()}
       </main>

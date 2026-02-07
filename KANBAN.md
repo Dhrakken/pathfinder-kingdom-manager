@@ -18,11 +18,11 @@
 - [ ] **Commerce Phase: Approve Expenses** - RP spending flow
 
 ### Phase 3: Kingdom Progression
-- [ ] **XP Tracking** - Awards from activities/events/milestones
-- [ ] **Level Up Process** - Ability boost, skill training
+- [x] ~~**XP Tracking** - Awards from activities/events/milestones~~
+- [x] ~~**Level Up Process** - Ability boost, skill training~~
 - [ ] **Skill Training Purchase** - Spend RP to train skills
 - [ ] **Kingdom Feats** - Feat database + selection UI
-- [ ] **Milestone Tracking** - First village, first city, etc.
+- [x] ~~**Milestone Tracking** - First village, first city, etc.~~
 
 ### Phase 4: Advanced Systems
 - [ ] **Army Creation** - Stats, tactics, upkeep
