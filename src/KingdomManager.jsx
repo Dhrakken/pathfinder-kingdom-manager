@@ -4,7 +4,7 @@ import {
   Shield, BookOpen, Sword, Calendar, Plus, Save, Download, Upload,
   Home, LayoutDashboard, Map, History, Settings, ChevronRight, Dice6,
   AlertTriangle, CheckCircle, XCircle, TrendingUp, TrendingDown,
-  ChevronDown, Image, Grid, Hexagon, Building2, Award
+  ChevronDown, Image, Grid, Hexagon, Building2, Award, Star
 } from 'lucide-react';
 import { 
   getSizeData, getControlDC, ABILITIES, SKILLS, ALL_SKILLS,
@@ -634,6 +634,54 @@ export default function KingdomManager() {
           </div>
         </div>
       )}
+
+      {/* XP Award Section */}
+      <div className="glass-card p-4">
+        <h3 className="text-yellow-400 font-semibold mb-3 flex items-center gap-2">
+          <Star className="w-5 h-5" /> Award XP
+        </h3>
+        <div className="flex flex-wrap gap-2">
+          {[10, 20, 40, 80].map(xp => (
+            <button
+              key={xp}
+              onClick={() => {
+                setState(prev => ({
+                  ...prev,
+                  kingdom: { ...prev.kingdom, xp: (prev.kingdom.xp || 0) + xp }
+                }));
+                addLog(`Awarded ${xp} XP`, 'success');
+              }}
+              className="px-3 py-2 bg-green-600/20 hover:bg-green-600/40 border border-green-500/50 rounded text-green-400 text-sm"
+            >
+              +{xp} XP
+            </button>
+          ))}
+          <div className="flex items-center gap-1">
+            <input
+              type="number"
+              placeholder="Custom"
+              className="w-20 px-2 py-2 bg-black/30 border border-white/20 rounded text-sm"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  const xp = parseInt(e.target.value) || 0;
+                  if (xp > 0) {
+                    setState(prev => ({
+                      ...prev,
+                      kingdom: { ...prev.kingdom, xp: (prev.kingdom.xp || 0) + xp }
+                    }));
+                    addLog(`Awarded ${xp} XP`, 'success');
+                    e.target.value = '';
+                  }
+                }
+              }}
+            />
+            <span className="text-xs text-gray-500">Enter↵</span>
+          </div>
+        </div>
+        <div className="mt-2 text-xs text-gray-500">
+          Quick: Hex claimed (10), Event resolved (20), Quest complete (40), Milestone (80)
+        </div>
+      </div>
 
       <div className="glass-card p-4">
         <h3 className="text-yellow-400 font-semibold mb-3">Quick Actions</h3>
