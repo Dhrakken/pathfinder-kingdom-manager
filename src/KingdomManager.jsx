@@ -961,7 +961,7 @@ function CustomMapViewer({ map, onUpdate, onDelete }) {
   
   // Grid size adjustment (grid mode)
   const handleGridResize = (delta) => {
-    const change = delta > 0 ? -2 : 2; // Scroll up = bigger, down = smaller
+    const change = delta < 0 ? 2 : -2; // Scroll up = bigger, down = smaller
     setGridSize(prev => Math.max(10, Math.min(200, prev + change)));
   };
   
@@ -981,8 +981,8 @@ function CustomMapViewer({ map, onUpdate, onDelete }) {
     
     if (showGridSettings) {
       // In grid mode: drag moves the grid offset
-      setGridOffsetX(prev => prev - dx);
-      setGridOffsetY(prev => prev - dy);
+      setGridOffsetX(prev => prev + dx);
+      setGridOffsetY(prev => prev + dy);
     } else {
       // Normal mode: drag pans the view
       setViewBox(prev => ({
