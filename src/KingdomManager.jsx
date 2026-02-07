@@ -20,6 +20,7 @@ import HexMap from './components/HexMap.jsx';
 import StolenLandsMap from './components/StolenLandsMap.jsx';
 import ActivityModal from './components/ActivityModal.jsx';
 import TradeModal from './components/TradeModal.jsx';
+import KingdomCreationWizard from './components/KingdomCreationWizard.jsx';
 import { HEX_STATUS, parseImportedMapData } from './utils/hexUtils.js';
 import { runFullUpkeep, checkLeadershipVacancies } from './engine/upkeepEngine.js';
 import { runEventPhase, KINGDOM_EVENTS } from './engine/eventEngine.js';
@@ -197,6 +198,7 @@ export default function KingdomManager() {
   const [showActivityModal, setShowActivityModal] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState(null);
   const [showTradeModal, setShowTradeModal] = useState(false);
+  const [showKingdomWizard, setShowKingdomWizard] = useState(false);
   
   // Multi-map system
   const [selectedMapId, setSelectedMapId] = useState('kingdom'); // 'kingdom' or custom map id
@@ -594,6 +596,7 @@ export default function KingdomManager() {
       <div className="glass-card p-4">
         <h3 className="text-yellow-400 font-semibold mb-3">Quick Actions</h3>
         <div className="flex flex-wrap gap-2">
+          <button onClick={() => setShowKingdomWizard(true)} className="btn-royal flex items-center gap-2"><Crown className="w-4 h-4" /> New Kingdom</button>
           <button onClick={exportState} className="btn-secondary flex items-center gap-2"><Download className="w-4 h-4" /> Export</button>
           <label className="btn-secondary flex items-center gap-2 cursor-pointer"><Upload className="w-4 h-4" /> Import<input type="file" accept=".json" onChange={importState} className="hidden" /></label>
         </div>
@@ -887,6 +890,39 @@ export default function KingdomManager() {
           onClose={() => setShowTradeModal(false)}
           onTrade={(newState) => setState(newState)}
           onLog={addLog}
+        />
+      )}
+      
+      {/* Kingdom Creation Wizard */}
+      {showKingdomWizard && (
+        <KingdomCreationWizard
+          onCancel={() => setShowKingdomWizard(false)}
+          onComplete={(newKingdom) => {
+            // Apply the new kingdom settings
+            setState(prev => ({
+              ...prev,
+              kingdom: {
+                ...prev.kingdom,
+                name: newKingdom.name,
+                charter: newKingdom.charter,
+                heartland: newKingdom.heartland,
+                government: newKingdom.government,
+                level: 1,
+                xp: 0,
+                hexes: 1,
+              },
+              abilities: newKingdom.abilities,
+              skillProficiencies: {
+                ...Object.keys(prev.skillProficiencies || {}).reduce((acc, k) => ({ ...acc, [k]: 'Untrained' }), {}),
+                ...newKingdom.trainedSkills.reduce((acc, skill) => ({ ...acc, [skill]: 'Trained' }), {}),
+              },
+              factions: {
+                '1': { id: '1', name: newKingdom.name, color: '#6366f1', isPlayer: true },
+              },
+            }));
+            setShowKingdomWizard(false);
+            addLog(`Founded the kingdom of ${newKingdom.name}!`, 'success');
+          }}
         />
       )}
       
