@@ -1,23 +1,24 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { 
-  Plus, X, Hammer, Search, LayoutGrid, Eye, EyeOff,
-  Trash2, Info, ZoomIn, ZoomOut, TreePine
+  Plus, X, Hammer, Search, LayoutGrid, 
+  Trash2, Info, ZoomIn, ZoomOut
 } from 'lucide-react';
 import { STRUCTURES, getStructureById, getStructuresByLevel } from '../data/structures.js';
 
 const BASE = import.meta.env.BASE_URL || '/';
 const BUILDING_IMAGES = {
-  'houses': `${BASE}assets/buildings/cottage-1.jpg`,
-  'inn': `${BASE}assets/buildings/inn-1.jpg`,
-  'tavern': `${BASE}assets/buildings/inn-2.jpg`,
-  'temple': `${BASE}assets/buildings/temple-1.jpg`,
-  'shrine': `${BASE}assets/buildings/temple-2.jpg`,
-  'granary': `${BASE}assets/buildings/cottage-2.jpg`,
+  'houses': `${BASE}assets/buildings/cottage-1.png`,
+  'inn': `${BASE}assets/buildings/inn-1.png`,
+  'tavern': `${BASE}assets/buildings/inn-2.png`,
+  'temple': `${BASE}assets/buildings/temple-1.png`,
+  'shrine': `${BASE}assets/buildings/temple-2.png`,
+  'granary': `${BASE}assets/buildings/cottage-2.png`,
 };
 
-// Settlement map dimensions
-const MAP_WIDTH = 600;
-const MAP_HEIGHT = 500;
+// Settlement map dimensions - isometric grid
+const TILE_SIZE = 100; // Base tile size before transform
+const ISO_ANGLE = 60; // Tilt angle in degrees
+const ISO_ROTATION = 45; // Rotation to make diamonds
 
 export default function SettlementBuilder({ 
   settlement, 
@@ -44,8 +45,13 @@ export default function SettlementBuilder({
   };
   
   const config = getSettlementConfig(settlement.blocks || 1);
-  const lotWidth = MAP_WIDTH / config.cols;
-  const lotHeight = MAP_HEIGHT / config.rows;
+  
+  // Isometric grid dimensions
+  const gridWidth = config.cols * TILE_SIZE;
+  const gridHeight = config.rows * TILE_SIZE;
+  // After transform, we need more container space
+  const containerWidth = (config.cols + config.rows) * TILE_SIZE * 0.7;
+  const containerHeight = (config.cols + config.rows) * TILE_SIZE * 0.5;
   
   // Get available structures
   const availableStructures = useMemo(() => {
@@ -196,7 +202,7 @@ export default function SettlementBuilder({
   }, [settlement.structures, config]);
   
   const usedLots = buildings.reduce((a, b) => a + (b.structure.lots || 1), 0);
-  
+
   const getCostDisplay = (structure) => {
     const cost = structure.cost || {};
     const parts = [];
@@ -207,20 +213,6 @@ export default function SettlementBuilder({
     if (cost.luxuries) parts.push(<span key="x" className={(state.resources?.luxuries||0) >= cost.luxuries ? 'text-pink-400' : 'text-red-400'}>{cost.luxuries}💎</span>);
     return parts.length ? parts.reduce((a,p,i) => [...a, i?' ':'', p], []) : <span className="text-green-400">Free</span>;
   };
-
-  // Generate decorative trees
-  const trees = useMemo(() => {
-    const t = [];
-    for (let i = 0; i < 12; i++) {
-      t.push({
-        x: Math.random() * MAP_WIDTH,
-        y: Math.random() * MAP_HEIGHT,
-        size: 20 + Math.random() * 15,
-        opacity: 0.3 + Math.random() * 0.3,
-      });
-    }
-    return t;
-  }, []);
 
   return (
     <div className="flex gap-4 h-[600px]">
@@ -300,135 +292,144 @@ export default function SettlementBuilder({
           </div>
         </div>
         
-        {/* Map Container */}
-        <div className="flex-1 rounded-lg overflow-hidden relative" style={{ background: 'linear-gradient(180deg, #1a2f1a 0%, #243524 100%)' }}>
-          <div className="absolute inset-0 overflow-auto p-4">
-            <div style={{ transform: `scale(${zoom})`, transformOrigin: 'top left', width: MAP_WIDTH, height: MAP_HEIGHT }} className="relative">
-              
-              {/* Terrain Layer - grass texture */}
-              <div className="absolute inset-0 rounded-lg overflow-hidden" style={{
-                background: `
-                  radial-gradient(ellipse at 30% 20%, rgba(60,90,40,0.6) 0%, transparent 50%),
-                  radial-gradient(ellipse at 70% 80%, rgba(50,80,35,0.5) 0%, transparent 50%),
-                  radial-gradient(ellipse at 50% 50%, rgba(70,100,50,0.4) 0%, transparent 60%),
-                  linear-gradient(180deg, #3d5c3d 0%, #4a6b4a 50%, #3d5c3d 100%)
-                `,
-              }}>
-                {/* Dirt paths - connecting roads */}
-                <svg className="absolute inset-0 w-full h-full opacity-40">
-                  <defs>
-                    <pattern id="dirt" patternUnits="userSpaceOnUse" width="20" height="20">
-                      <rect width="20" height="20" fill="#8B7355"/>
-                      <circle cx="5" cy="5" r="2" fill="#7a6548" opacity="0.5"/>
-                      <circle cx="15" cy="12" r="1.5" fill="#9c8462" opacity="0.3"/>
-                    </pattern>
-                  </defs>
-                  {/* Main road */}
-                  <path d={`M 0 ${MAP_HEIGHT/2} L ${MAP_WIDTH} ${MAP_HEIGHT/2}`} stroke="url(#dirt)" strokeWidth="20" fill="none" opacity="0.6"/>
-                  <path d={`M ${MAP_WIDTH/2} 0 L ${MAP_WIDTH/2} ${MAP_HEIGHT}`} stroke="url(#dirt)" strokeWidth="15" fill="none" opacity="0.5"/>
-                </svg>
-              </div>
-              
-              {/* Decorative Trees */}
-              {trees.map((t, i) => (
-                <div key={i} className="absolute pointer-events-none text-green-800" 
-                  style={{ left: t.x, top: t.y, fontSize: t.size, opacity: t.opacity, transform: 'translate(-50%, -50%)' }}>
-                  🌲
-                </div>
-              ))}
-              
-              {/* Waterfront */}
-              {settlement.mapConfig?.waterfront && settlement.mapConfig.waterfront !== 'none' && (
-                <div className={`absolute pointer-events-none ${
-                  settlement.mapConfig.waterfront === 'south' ? 'bottom-0 left-0 right-0 h-16' :
-                  settlement.mapConfig.waterfront === 'north' ? 'top-0 left-0 right-0 h-16' :
-                  settlement.mapConfig.waterfront === 'east' ? 'top-0 right-0 bottom-0 w-16' :
-                  'top-0 left-0 bottom-0 w-16'
-                }`} style={{
-                  background: settlement.mapConfig.waterfront === 'south' || settlement.mapConfig.waterfront === 'north'
-                    ? 'linear-gradient(to bottom, transparent, rgba(59, 130, 246, 0.5))'
-                    : 'linear-gradient(to right, transparent, rgba(59, 130, 246, 0.5))',
-                }} />
-              )}
-              
-              {/* Grid Overlay - very subtle */}
-              {showGrid && (
-                <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 5 }}>
-                  {Array(config.cols + 1).fill(0).map((_, i) => (
-                    <line key={`v${i}`} x1={i * lotWidth} y1={0} x2={i * lotWidth} y2={MAP_HEIGHT}
-                      stroke="rgba(255,255,255,0.15)" strokeWidth="1" strokeDasharray="4 4" />
-                  ))}
-                  {Array(config.rows + 1).fill(0).map((_, i) => (
-                    <line key={`h${i}`} x1={0} y1={i * lotHeight} x2={MAP_WIDTH} y2={i * lotHeight}
-                      stroke="rgba(255,255,255,0.15)" strokeWidth="1" strokeDasharray="4 4" />
-                  ))}
-                </svg>
-              )}
-              
-              {/* Drop Zones */}
-              <div className="absolute inset-0" style={{ zIndex: 10 }}>
-                {Array(config.maxLots).fill(null).map((_, i) => {
-                  const col = i % config.cols;
-                  const row = Math.floor(i / config.cols);
-                  const isValid = draggedStructure && isValidPlacement(i, draggedStructure);
-                  const isDragOver = dragOverSlot === i;
-                  const isOccupied = settlement.structures?.[i];
-                  
-                  return (
-                    <div key={i} className={`absolute transition-all ${isOccupied ? 'pointer-events-none' : ''}`}
-                      style={{ left: col * lotWidth, top: row * lotHeight, width: lotWidth, height: lotHeight }}
-                      onDragOver={(e) => handleDragOver(e, i)}
-                      onDragLeave={() => setDragOverSlot(null)}
-                      onDrop={(e) => handleDrop(e, i)}>
-                      {draggedStructure && isValid && (
-                        <div className={`absolute inset-1 rounded transition-all ${isDragOver ? 'bg-green-500/40 border-2 border-green-400' : 'bg-yellow-500/20 border border-yellow-500/30'}`} />
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-              
-              {/* Buildings Layer */}
-              <div className="absolute inset-0" style={{ zIndex: 20 }}>
-                {buildings.map((b) => {
-                  const img = BUILDING_IMAGES[b.structure.id];
-                  const x = b.col * lotWidth;
-                  const y = b.row * lotHeight;
-                  const w = b.width * lotWidth;
-                  const h = b.height * lotHeight;
-                  
-                  return (
-                    <div key={b.slotIndex} className="absolute group" style={{ left: x + 4, top: y + 4, width: w - 8, height: h - 8 }}>
-                      {img ? (
-                        <img src={img} alt={b.structure.name} className="w-full h-full object-contain drop-shadow-xl" 
-                          style={{ filter: 'drop-shadow(3px 5px 8px rgba(0,0,0,0.6))' }} />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-b from-amber-600 to-amber-800 rounded-lg flex items-center justify-center shadow-xl border-2 border-amber-500">
-                          <span className="text-3xl">🏠</span>
-                        </div>
-                      )}
-                      
-                      {/* Name tooltip */}
-                      <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 bg-black/90 text-white text-[10px] px-2 py-0.5 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-30">
-                        {b.structure.name}
+        {/* Map Container - Isometric View */}
+        <div className="flex-1 rounded-lg overflow-hidden relative" style={{ background: 'linear-gradient(180deg, #0a1a0a 0%, #1a2f1a 100%)' }}>
+          <div className="absolute inset-0 overflow-auto flex items-center justify-center" style={{ perspective: '1000px' }}>
+            <div 
+              className="relative"
+              style={{ 
+                transform: `scale(${zoom}) rotateX(${ISO_ANGLE}deg) rotateZ(${ISO_ROTATION}deg)`,
+                transformStyle: 'preserve-3d',
+                width: gridWidth,
+                height: gridHeight,
+              }}
+            >
+              {/* Isometric Grid Tiles */}
+              {Array(config.maxLots).fill(null).map((_, i) => {
+                const col = i % config.cols;
+                const row = Math.floor(i / config.cols);
+                const isValid = draggedStructure && isValidPlacement(i, draggedStructure);
+                const isDragOver = dragOverSlot === i;
+                const isOccupied = settlement.structures?.[i];
+                
+                // Waterfront edge detection
+                const waterfront = settlement.mapConfig?.waterfront || 'none';
+                const isWaterEdge = 
+                  (waterfront === 'south' && row === config.rows - 1) ||
+                  (waterfront === 'north' && row === 0) ||
+                  (waterfront === 'east' && col === config.cols - 1) ||
+                  (waterfront === 'west' && col === 0);
+                
+                // Grass color variation based on position
+                const grassHue = 120 + ((col * 3 + row * 7) % 20) - 10;
+                const grassLight = 25 + ((col * 5 + row * 3) % 10);
+                
+                return (
+                  <div 
+                    key={i}
+                    className={`absolute transition-all border border-black/30 ${isOccupied ? 'pointer-events-none' : 'cursor-pointer hover:brightness-110'}`}
+                    style={{ 
+                      left: col * TILE_SIZE, 
+                      top: row * TILE_SIZE, 
+                      width: TILE_SIZE, 
+                      height: TILE_SIZE,
+                      background: isWaterEdge 
+                        ? `linear-gradient(135deg, hsl(200, 60%, 35%) 0%, hsl(210, 70%, 25%) 100%)`
+                        : `linear-gradient(135deg, hsl(${grassHue}, 40%, ${grassLight}%) 0%, hsl(${grassHue}, 45%, ${grassLight - 5}%) 100%)`,
+                      boxShadow: 'inset 0 0 10px rgba(0,0,0,0.3)',
+                    }}
+                    onDragOver={(e) => handleDragOver(e, i)}
+                    onDragLeave={() => setDragOverSlot(null)}
+                    onDrop={(e) => handleDrop(e, i)}
+                  >
+                    {/* Grid lines */}
+                    {showGrid && (
+                      <div className="absolute inset-0 border border-white/10" />
+                    )}
+                    
+                    {/* Valid drop highlight */}
+                    {draggedStructure && isValid && (
+                      <div className={`absolute inset-0 transition-all ${isDragOver ? 'bg-green-400/50 border-2 border-green-300' : 'bg-yellow-400/30'}`} />
+                    )}
+                    
+                    {/* Water wave effect */}
+                    {isWaterEdge && (
+                      <div className="absolute inset-0 overflow-hidden opacity-30">
+                        <div className="absolute inset-0 animate-pulse" style={{
+                          background: 'repeating-linear-gradient(90deg, transparent, transparent 10px, rgba(255,255,255,0.1) 10px, rgba(255,255,255,0.1) 20px)',
+                        }} />
                       </div>
-                      
-                      {/* Demolish */}
-                      <button onClick={() => demolishStructure(b.slotIndex)}
-                        className="absolute -top-2 -right-2 w-5 h-5 bg-red-600 rounded-full hidden group-hover:flex items-center justify-center hover:bg-red-500 shadow-lg z-30">
-                        <X className="w-3 h-3 text-white" />
-                      </button>
+                    )}
+                  </div>
+                );
+              })}
+              
+              {/* Buildings Layer - stay on the isometric plane, just lifted */}
+              {buildings.map((b) => {
+                const img = BUILDING_IMAGES[b.structure.id];
+                const x = b.col * TILE_SIZE;
+                const y = b.row * TILE_SIZE;
+                const w = b.width * TILE_SIZE;
+                const h = b.height * TILE_SIZE;
+                
+                return (
+                  <div 
+                    key={b.slotIndex} 
+                    className="absolute group pointer-events-auto"
+                    style={{ 
+                      left: x + TILE_SIZE * 0.1, 
+                      top: y - TILE_SIZE * 0.3, // Shift up to appear "on" the tile
+                      width: w * 0.8,
+                      height: h * 1.3, // Taller to show building properly
+                    }}
+                  >
+                    {img ? (
+                      <img 
+                        src={img} 
+                        alt={b.structure.name} 
+                        className="w-full h-full object-contain"
+                        style={{ 
+                          filter: 'drop-shadow(2px 4px 8px rgba(0,0,0,0.8))',
+                        }} 
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-b from-amber-600 to-amber-800 rounded flex items-center justify-center shadow-xl border-2 border-amber-500">
+                        <span className="text-3xl">🏠</span>
+                      </div>
+                    )}
+                    
+                    {/* Name tooltip */}
+                    <div 
+                      className="absolute left-1/2 -translate-x-1/2 bg-black/95 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50"
+                      style={{ 
+                        bottom: '100%', 
+                        marginBottom: 4,
+                        transform: `translateX(-50%) rotateZ(-${ISO_ROTATION}deg) rotateX(-${ISO_ANGLE}deg)`,
+                      }}
+                    >
+                      {b.structure.name}
                     </div>
-                  );
-                })}
-              </div>
+                    
+                    {/* Demolish button */}
+                    <button 
+                      onClick={() => demolishStructure(b.slotIndex)}
+                      className="absolute -top-1 -right-1 w-5 h-5 bg-red-600 rounded-full hidden group-hover:flex items-center justify-center hover:bg-red-500 shadow-lg z-50"
+                      style={{
+                        transform: `rotateZ(-${ISO_ROTATION}deg) rotateX(-${ISO_ANGLE}deg)`,
+                      }}
+                    >
+                      <X className="w-3 h-3 text-white" />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </div>
           
           {/* Drag indicator */}
           {draggedStructure && (
-            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/80 text-yellow-400 text-xs px-3 py-1 rounded-full">
-              Drop "{draggedStructure.name}" on highlighted area
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/90 text-yellow-400 text-sm px-4 py-2 rounded-full shadow-lg">
+              Drop "{draggedStructure.name}" on highlighted tile
             </div>
           )}
         </div>
