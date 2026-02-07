@@ -4,7 +4,7 @@ import {
   Shield, BookOpen, Sword, Calendar, Plus, Save, Download, Upload,
   Home, LayoutDashboard, Map, History, Settings, ChevronRight, Dice6,
   AlertTriangle, CheckCircle, XCircle, TrendingUp, TrendingDown,
-  ChevronDown, Image, Grid3X3, Hexagon
+  ChevronDown, Image, Grid, Hexagon
 } from 'lucide-react';
 import { 
   getSizeData, getControlDC, ABILITIES, SKILLS, ALL_SKILLS,
@@ -635,7 +635,7 @@ export default function KingdomManager() {
                           onClick={() => { setSelectedMapId(map.id); setActiveTab('map'); setShowMapDropdown(false); }}
                           className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 hover:bg-yellow-600/20 ${selectedMapId === map.id ? 'text-yellow-400' : 'text-gray-200'}`}
                         >
-                          {map.gridType === 'hex' ? <Hexagon className="w-4 h-4" /> : <Grid3X3 className="w-4 h-4" />}
+                          {map.gridType === 'hex' ? <Hexagon className="w-4 h-4" /> : <Grid className="w-4 h-4" />}
                           {map.name}
                           {selectedMapId === map.id && <CheckCircle className="w-3 h-3 ml-auto" />}
                         </button>
@@ -809,7 +809,7 @@ function AddMapModal({ onClose, onAdd }) {
                     : 'bg-gray-800 border border-gray-700 text-gray-400 hover:border-gray-600'
                 }`}
               >
-                <Grid3X3 className="w-5 h-5" />
+                <Grid className="w-5 h-5" />
                 Square
               </button>
               <button
@@ -971,7 +971,7 @@ function CustomMapViewer({ map, onUpdate, onDelete }) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold text-yellow-400 flex items-center gap-2">
-          {map.gridType === 'hex' ? <Hexagon className="w-6 h-6" /> : <Grid3X3 className="w-6 h-6" />}
+          {map.gridType === 'hex' ? <Hexagon className="w-6 h-6" /> : <Grid className="w-6 h-6" />}
           {map.name}
         </h2>
         <div className="flex items-center gap-2">
