@@ -18,6 +18,7 @@ import {
 } from './data/activities.js';
 import HexMap from './components/HexMap.jsx';
 import StolenLandsMap from './components/StolenLandsMap.jsx';
+import ActivityModal from './components/ActivityModal.jsx';
 import { HEX_STATUS, parseImportedMapData } from './utils/hexUtils.js';
 
 // ============================================
@@ -505,29 +506,58 @@ export default function KingdomManager() {
     </div>
   );
 
-  const renderActivities = () => (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between"><h2 className="text-xl font-semibold text-yellow-400">Activities</h2><div className="text-sm text-gray-400">Leadership Actions: {state.turn.leadershipActionsUsed}/{state.turn.leadershipActionsMax}</div></div>
-      <div className="glass-card p-4">
-        <h3 className="text-yellow-400 font-semibold mb-3">Leadership Activities</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-          {LEADERSHIP_ACTIVITIES.map(activity => (<button key={activity.id} onClick={() => { setSelectedActivity(activity); setShowActivityModal(true); }} className="text-left p-3 bg-white/5 hover:bg-white/10 rounded border border-white/10 hover:border-yellow-500/50 transition-all"><div className="font-medium">{activity.name}</div><div className="text-xs text-gray-400">{activity.skill} • {activity.desc}</div></button>))}
+  const renderActivities = () => {
+    // Helper to render an activity card
+    const ActivityCard = ({ activity }) => (
+      <button
+        key={activity.id}
+        onClick={() => { setSelectedActivity(activity); setShowActivityModal(true); }}
+        className="text-left p-3 bg-white/5 hover:bg-white/10 rounded border border-white/10 hover:border-yellow-500/50 transition-all"
+      >
+        <div className="flex items-center justify-between">
+          <div className="font-medium">{activity.name}</div>
+          {activity.rpCost > 0 && (
+            <span className={`text-xs px-2 py-0.5 rounded ${state.resources.rp >= activity.rpCost ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}`}>
+              {activity.rpCost} RP
+            </span>
+          )}
+        </div>
+        <div className="text-xs text-gray-400 mt-1">{activity.skill} • {activity.desc}</div>
+      </button>
+    );
+
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-yellow-400">Activities</h2>
+          <div className="text-sm text-gray-400">
+            Leadership Actions: {state.turn.leadershipActionsUsed}/{state.turn.leadershipActionsMax} • RP: {state.resources.rp}
+          </div>
+        </div>
+        
+        <div className="glass-card p-4">
+          <h3 className="text-yellow-400 font-semibold mb-3">Leadership Activities</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+            {LEADERSHIP_ACTIVITIES.map(activity => <ActivityCard key={activity.id} activity={activity} />)}
+          </div>
+        </div>
+        
+        <div className="glass-card p-4">
+          <h3 className="text-yellow-400 font-semibold mb-3">Region Activities</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+            {REGION_ACTIVITIES.map(activity => <ActivityCard key={activity.id} activity={activity} />)}
+          </div>
+        </div>
+        
+        <div className="glass-card p-4">
+          <h3 className="text-yellow-400 font-semibold mb-3">Civic Activities</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+            {CIVIC_ACTIVITIES.map(activity => <ActivityCard key={activity.id} activity={activity} />)}
+          </div>
         </div>
       </div>
-      <div className="glass-card p-4">
-        <h3 className="text-yellow-400 font-semibold mb-3">Region Activities</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-          {REGION_ACTIVITIES.map(activity => (<button key={activity.id} onClick={() => { setSelectedActivity(activity); setShowActivityModal(true); }} className="text-left p-3 bg-white/5 hover:bg-white/10 rounded border border-white/10 hover:border-yellow-500/50 transition-all"><div className="font-medium">{activity.name}</div><div className="text-xs text-gray-400">{activity.skill} • {activity.desc}</div>{activity.rp && <div className="text-xs text-yellow-400">{activity.rp} RP</div>}</button>))}
-        </div>
-      </div>
-      <div className="glass-card p-4">
-        <h3 className="text-yellow-400 font-semibold mb-3">Civic Activities</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-          {CIVIC_ACTIVITIES.map(activity => (<button key={activity.id} onClick={() => { setSelectedActivity(activity); setShowActivityModal(true); }} className="text-left p-3 bg-white/5 hover:bg-white/10 rounded border border-white/10 hover:border-yellow-500/50 transition-all"><div className="font-medium">{activity.name}</div><div className="text-xs text-gray-400">{activity.skill} • {activity.desc}</div></button>))}
-        </div>
-      </div>
-    </div>
-  );
+    );
+  };
 
   const renderSettlements = () => (
     <div className="space-y-6">
@@ -722,18 +752,18 @@ export default function KingdomManager() {
       </main>
 
       {showActivityModal && selectedActivity && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="glass-card p-6 max-w-md w-full">
-            <h3 className="text-xl font-semibold text-yellow-400 mb-2">{selectedActivity.name}</h3>
-            <p className="text-gray-300 mb-4">{selectedActivity.desc}</p>
-            <div className="text-sm text-gray-400 mb-4"><div>Skill: {selectedActivity.skill}</div>{selectedActivity.rp && <div>Cost: {selectedActivity.rp} RP</div>}</div>
-            {selectedActivity.outcomes && (<div className="space-y-1 text-sm mb-4"><div className="text-green-400">Critical Success: {selectedActivity.outcomes.criticalSuccess}</div><div className="text-blue-400">Success: {selectedActivity.outcomes.success}</div><div className="text-yellow-400">Failure: {selectedActivity.outcomes.failure}</div><div className="text-red-400">Critical Failure: {selectedActivity.outcomes.criticalFailure}</div></div>)}
-            <div className="flex gap-2">
-              <button onClick={() => { const result = performSkillCheck(selectedActivity.skill, controlDC); addLog(`${selectedActivity.name}: Rolled ${result.roll} + ${result.modifier} = ${result.total} vs DC ${result.dc} (${result.degree})`, result.degree.includes('Success') ? 'success' : 'failure'); setShowActivityModal(false); }} className="btn-royal flex-1">Roll Check</button>
-              <button onClick={() => setShowActivityModal(false)} className="btn-secondary">Cancel</button>
-            </div>
-          </div>
-        </div>
+        <ActivityModal
+          activity={selectedActivity}
+          state={state}
+          onClose={() => {
+            setShowActivityModal(false);
+            setSelectedActivity(null);
+          }}
+          onExecute={(newState) => {
+            setState(newState);
+          }}
+          onLog={addLog}
+        />
       )}
       
       {/* Add Map Modal */}
