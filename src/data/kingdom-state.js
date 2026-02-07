@@ -48,7 +48,18 @@ export const createInitialKingdomState = (overrides = {}) => ({
   
   resourcePoints: 0,
   hexes: [],
-  settlements: [],
+  settlements: [
+    // Sample settlement for testing the settlement builder
+    {
+      id: 'lakewatch-1',
+      name: 'Lakewatch',
+      isCapital: true,
+      hex: 'f19',
+      blocks: 4,
+      structures: ['houses', 'inn', 'shrine'],
+      mapConfig: { waterfront: 'south' },
+    },
+  ],
   leaders: [],
   feats: [],
   currentTurn: 1,

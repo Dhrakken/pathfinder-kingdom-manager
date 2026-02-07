@@ -813,7 +813,7 @@ export default function KingdomManager() {
           </div>
         ) : (
           state.settlements.map(settlement => (
-            <SettlementVisual
+            <SettlementBuilder
               key={settlement.id}
               settlement={settlement}
               state={state}
