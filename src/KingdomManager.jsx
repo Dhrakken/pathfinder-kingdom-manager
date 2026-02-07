@@ -614,7 +614,7 @@ export default function KingdomManager() {
               </button>
               
               {showMapDropdown && (
-                <div className="absolute top-full left-0 mt-1 w-56 bg-gray-900/95 border border-yellow-600/30 rounded-lg shadow-xl py-1 z-50">
+                <div className="absolute top-full left-0 mt-1 w-56 bg-gray-900/95 border border-yellow-600/30 rounded-lg shadow-xl py-1 z-[100]">
                   {/* Kingdom Map */}
                   <button
                     onClick={() => { setSelectedMapId('kingdom'); setActiveTab('map'); setShowMapDropdown(false); }}
