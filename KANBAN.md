@@ -7,14 +7,14 @@
 ## 🎯 Backlog
 
 ### Phase 2: Complete Turn Mechanics
-- [ ] **Structure Bonuses** - Buildings provide item bonuses to skills
-- [ ] **Settlement Level Calc** - Calculate from blocks, apply consumption
-- [ ] **Storage Capacity** - Commodity caps from structures
+- [x] ~~**Structure Bonuses** - Buildings provide item bonuses to skills~~
+- [x] ~~**Settlement Level Calc** - Calculate from blocks, apply consumption~~
+- [x] ~~**Storage Capacity** - Commodity caps from structures~~
 - [ ] **Charter Selection** - Kingdom creation wizard step 1
 - [ ] **Heartland Selection** - Kingdom creation wizard step 2  
 - [ ] **Government Selection** - Kingdom creation wizard step 3
-- [ ] **Commerce Phase: Collect Taxes** - Proper skill check
-- [ ] **Commerce Phase: Trade Commodities** - Buy/sell with rates
+- [x] ~~**Commerce Phase: Collect Taxes** - Proper skill check~~
+- [x] ~~**Commerce Phase: Trade Commodities** - Buy/sell with rates~~
 - [ ] **Commerce Phase: Approve Expenses** - RP spending flow
 
 ### Phase 3: Kingdom Progression
@@ -47,11 +47,27 @@
 
 ## 🚧 In Progress
 
-- [ ] **Structure Bonuses Engine** - Parse structure data, apply to checks
+- [ ] **Charter/Heartland/Government Selection** - Kingdom creation wizard
 
 ---
 
-## ✅ Done (Phase 1 MVP)
+## ✅ Done (Phase 1 MVP + Phase 2 Progress)
+
+### Structure Bonuses ✅
+- [x] getItemBonusForActivity() finds highest bonus
+- [x] getItemBonusForSkill() for general checks
+- [x] Bonuses displayed in ActivityModal skill breakdown
+- [x] calculateTotalConsumption() with reductions
+- [x] calculateStorageCapacity() from structures
+- [x] calculateLeadershipActivities() from Town Hall etc.
+
+### Commerce Phase ✅
+- [x] collectTaxes() with Trade skill check
+- [x] Tax amount based on degree of success
+- [x] tradeCommodities() for buying/selling
+- [x] Rate modifiers based on Trade check
+- [x] TradeModal UI with commodity selection
+- [x] Base values: Food 1, Lumber/Ore/Stone 2, Luxuries 4
 
 ### Activity Engine ✅
 - [x] Activities modify state (not just cosmetic)
@@ -119,8 +135,10 @@
 | Phase | Status | Completion |
 |-------|--------|------------|
 | Phase 1: MVP Turn | ✅ Complete | 100% |
-| Phase 2: Full Mechanics | 🚧 In Progress | 10% |
+| Phase 2: Full Mechanics | 🚧 In Progress | 60% |
 | Phase 3: Progression | ⏳ Planned | 0% |
 | Phase 4: Advanced | ⏳ Planned | 0% |
 
-**Overall: ~35% to feature-complete**
+**Overall: ~45% to feature-complete**
+
+> Last updated: 2026-02-07 08:15 EST
