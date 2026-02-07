@@ -1129,18 +1129,36 @@ function CustomMapViewer({ map, onUpdate, onDelete }) {
               key={cell.id}
               x={cell.x}
               y={cell.y}
-              width={map.gridSize}
-              height={map.gridSize}
+              width={gridSize}
+              height={gridSize}
               fill="transparent"
-              stroke="rgba(255,255,255,0.2)"
+              stroke={showGridSettings ? "rgba(255,200,0,0.5)" : "rgba(255,255,255,0.2)"}
               strokeWidth={1}
+              vectorEffect="non-scaling-stroke"
               onClick={() => handleCellClick(cell.id)}
               style={{ cursor: fogMode ? 'pointer' : 'inherit' }}
             />
           ))}
           
+          {/* Anchor point marker (in grid settings mode) */}
+          {showGridSettings && (
+            <g>
+              <circle
+                cx={gridOffsetX}
+                cy={gridOffsetY}
+                r={8}
+                fill="red"
+                stroke="white"
+                strokeWidth={2}
+                vectorEffect="non-scaling-stroke"
+              />
+              <line x1={gridOffsetX - 15} y1={gridOffsetY} x2={gridOffsetX + 15} y2={gridOffsetY} stroke="red" strokeWidth={2} vectorEffect="non-scaling-stroke" />
+              <line x1={gridOffsetX} y1={gridOffsetY - 15} x2={gridOffsetX} y2={gridOffsetY + 15} stroke="red" strokeWidth={2} vectorEffect="non-scaling-stroke" />
+            </g>
+          )}
+          
           {/* Fog of War */}
-          {showFog && gridCells.map(cell => {
+          {showFog && !showGridSettings && gridCells.map(cell => {
             const revealed = isCellRevealed(cell.id);
             if (revealed) return null;
             return (
@@ -1148,8 +1166,8 @@ function CustomMapViewer({ map, onUpdate, onDelete }) {
                 key={`fog-${cell.id}`}
                 x={cell.x}
                 y={cell.y}
-                width={map.gridSize}
-                height={map.gridSize}
+                width={gridSize}
+                height={gridSize}
                 fill="rgba(0,0,0,0.85)"
                 onClick={() => handleCellClick(cell.id)}
                 style={{ cursor: fogMode ? 'pointer' : 'inherit' }}
