@@ -365,7 +365,7 @@ const POIEditorModal = ({ poi, isNew, onSave, onDelete, onClose }) => {
     building: ['village', 'house', 'camp', 'cabane', 'mine', 'ruin', 'dolmen'],
     resources: ['farm', 'tree', 'deadtree', 'mushroom', 'rock', 'lake'],
     misc: ['sign', 'bridge', 'battle', 'footmen', 'swamp', 'hill'],
-    armies: ['lizard', 'bandit', 'monster', 'enemy', 'friendly', 'patrol'],
+    armies: ['lizard', 'bandit', 'enemy', 'friendly', 'patrol'],
   };
   
   // When category changes, select first type in that category
