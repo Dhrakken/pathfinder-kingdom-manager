@@ -252,3 +252,9 @@ body {
 .tooltip:hover::after {
   opacity: 1;
 }
+
+/* Settlement builder - show building name on hover */
+g.cursor-pointer:hover .building-label {
+  opacity: 1 !important;
+  transition: opacity 0.15s;
+}
