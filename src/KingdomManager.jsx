@@ -21,6 +21,8 @@ import StolenLandsMap from './components/StolenLandsMap.jsx';
 import ActivityModal from './components/ActivityModal.jsx';
 import TradeModal from './components/TradeModal.jsx';
 import KingdomCreationWizard from './components/KingdomCreationWizard.jsx';
+import LevelUpModal from './components/LevelUpModal.jsx';
+import { checkLevelUp, checkMilestones, awardMilestones, getXPToNextLevel } from './engine/progressionEngine.js';
 import { HEX_STATUS, parseImportedMapData } from './utils/hexUtils.js';
 import { runFullUpkeep, checkLeadershipVacancies } from './engine/upkeepEngine.js';
 import { runEventPhase, KINGDOM_EVENTS } from './engine/eventEngine.js';
@@ -199,6 +201,7 @@ export default function KingdomManager() {
   const [selectedActivity, setSelectedActivity] = useState(null);
   const [showTradeModal, setShowTradeModal] = useState(false);
   const [showKingdomWizard, setShowKingdomWizard] = useState(false);
+  const [showLevelUpModal, setShowLevelUpModal] = useState(false);
   
   // Multi-map system
   const [selectedMapId, setSelectedMapId] = useState('kingdom'); // 'kingdom' or custom map id
@@ -406,8 +409,16 @@ export default function KingdomManager() {
           </div>
           <div className="text-right">
             <div className="text-yellow-400 text-xl font-bold">Level {state.kingdom.level}</div>
-            <div className="text-purple-200">{state.kingdom.xp} / {state.kingdom.xpToNext} XP</div>
+            <div className="text-purple-200">{state.kingdom.xp} / {getXPToNextLevel(state.kingdom.level)} XP</div>
             <div className="text-sm text-purple-300">{sizeData.type} • {state.kingdom.hexes} hexes</div>
+            {checkLevelUp(state).shouldLevel && (
+              <button
+                onClick={() => setShowLevelUpModal(true)}
+                className="mt-2 px-3 py-1 bg-green-500 hover:bg-green-400 text-black text-sm font-bold rounded animate-pulse"
+              >
+                ⬆ Level Up Available!
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -922,6 +933,29 @@ export default function KingdomManager() {
             }));
             setShowKingdomWizard(false);
             addLog(`Founded the kingdom of ${newKingdom.name}!`, 'success');
+          }}
+        />
+      )}
+      
+      {/* Level Up Modal */}
+      {showLevelUpModal && (
+        <LevelUpModal
+          state={state}
+          onCancel={() => setShowLevelUpModal(false)}
+          onComplete={(newState) => {
+            setState(newState);
+            setShowLevelUpModal(false);
+            addLog(`Kingdom leveled up to Level ${newState.kingdom.level}!`, 'success');
+            
+            // Check for milestones after level up
+            const newMilestones = checkMilestones(newState);
+            if (newMilestones.length > 0) {
+              const milestoneResult = awardMilestones(newState, newMilestones);
+              setState(milestoneResult.state);
+              for (const msg of milestoneResult.log) {
+                addLog(msg, 'success');
+              }
+            }
           }}
         />
       )}
