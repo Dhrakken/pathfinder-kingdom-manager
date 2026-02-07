@@ -921,7 +921,7 @@ export default function StolenLandsMap({
       >
         {/* Background map image */}
         <image
-          href="/stolen-lands-map.png"
+          href={`${import.meta.env.BASE_URL}stolen-lands-map.png`}
           x="0"
           y="0"
           width={MAP_WIDTH}
