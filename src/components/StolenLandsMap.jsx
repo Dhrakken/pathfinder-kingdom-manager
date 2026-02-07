@@ -515,12 +515,28 @@ export default function StolenLandsMap({
       id: poi.id || `poi-${idx}`,
     }));
   });
+  
+  // Party token position
+  const [partyPosition, setPartyPosition] = useState(() => {
+    const saved = localStorage.getItem('kingdomManager_partyPosition');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return { x: 4200, y: 1300 }; // Default near Lakewatch
+  });
+  const [draggingParty, setDraggingParty] = useState(false);
+  
   const svgRef = useRef(null);
   
   // Save POI positions to localStorage when they change
   useEffect(() => {
     localStorage.setItem('kingdomManager_poiPositions', JSON.stringify(poiPositions));
   }, [poiPositions]);
+  
+  // Save party position to localStorage
+  useEffect(() => {
+    localStorage.setItem('kingdomManager_partyPosition', JSON.stringify(partyPosition));
+  }, [partyPosition]);
   
   const selectedHex = selectedCoord ? hexes[selectedCoord] : null;
   
@@ -563,6 +579,28 @@ export default function StolenLandsMap({
     }
     setDraggingPOI(null);
   }, [draggingPOI, poiPositions, onPOIUpdate]);
+  
+  // Handle party token drag
+  const handlePartyDragStart = useCallback((e) => {
+    e.stopPropagation();
+    setDraggingParty(true);
+  }, []);
+  
+  const handlePartyDrag = useCallback((e) => {
+    if (!draggingParty || !svgRef.current) return;
+    
+    const svg = svgRef.current;
+    const pt = svg.createSVGPoint();
+    pt.x = e.clientX;
+    pt.y = e.clientY;
+    const svgPt = pt.matrixTransform(svg.getScreenCTM().inverse());
+    
+    setPartyPosition({ x: svgPt.x, y: svgPt.y });
+  }, [draggingParty]);
+  
+  const handlePartyDragEnd = useCallback(() => {
+    setDraggingParty(false);
+  }, []);
   
   // Handle right-click context menu
   const handleContextMenu = useCallback((e) => {
@@ -654,7 +692,7 @@ export default function StolenLandsMap({
     return [
       { icon: Plus, label: 'Add Marker Here', action: () => handleAddPOI({ x: contextMenu.svgX, y: contextMenu.svgY }) },
       { separator: true },
-      { icon: Navigation, label: 'Move Player Here', action: () => console.log('TODO: Move player') },
+      { icon: Navigation, label: 'Move Party Here', action: () => setPartyPosition({ x: contextMenu.svgX, y: contextMenu.svgY }) },
     ];
   }, [contextMenu, handleEditPOI, handleDeletePOI, handleAddPOI]);
   
@@ -699,15 +737,20 @@ export default function StolenLandsMap({
     });
   };
   
-  // Pan (only if not dragging POI)
+  // Pan (only if not dragging POI or party)
   const handleMouseDown = (e) => {
-    if (e.button === 0 && !draggingPOI) {
+    if (e.button === 0 && !draggingPOI && !draggingParty) {
       setIsPanning(true);
       setPanStart({ x: e.clientX, y: e.clientY });
     }
   };
   
   const handleMouseMove = (e) => {
+    // Handle party dragging
+    if (draggingParty) {
+      handlePartyDrag(e);
+      return;
+    }
     // Handle POI dragging
     if (draggingPOI) {
       handlePOIDrag(e);
@@ -727,6 +770,9 @@ export default function StolenLandsMap({
   };
   
   const handleMouseUp = () => {
+    if (draggingParty) {
+      handlePartyDragEnd();
+    }
     if (draggingPOI) {
       handlePOIDragEnd();
     }
@@ -826,6 +872,40 @@ export default function StolenLandsMap({
               isDragging={draggingPOI?.id === poi.id}
             />
           ))}
+        
+        {/* Party Token */}
+        <g 
+          transform={`translate(${partyPosition.x}, ${partyPosition.y})`}
+          onMouseDown={handlePartyDragStart}
+          style={{ cursor: draggingParty ? 'grabbing' : 'grab' }}
+        >
+          {/* Outer glow */}
+          <circle cx="0" cy="0" r="30" fill="rgba(255,215,0,0.3)" />
+          {/* Main circle */}
+          <circle 
+            cx="0" cy="0" r="24" 
+            fill={draggingParty ? '#FFD700' : '#1a1a2e'} 
+            stroke="#FFD700" 
+            strokeWidth={draggingParty ? 5 : 3} 
+          />
+          {/* Icon - Users/Party */}
+          <foreignObject x="-16" y="-16" width="32" height="32">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
+              <Users size={26} color="#FFD700" strokeWidth={2} />
+            </div>
+          </foreignObject>
+          {/* Label */}
+          <text
+            y="42"
+            textAnchor="middle"
+            fontSize="14"
+            fill="#FFD700"
+            fontWeight="bold"
+            style={{ textShadow: '1px 1px 2px black, -1px -1px 2px black' }}
+          >
+            PARTY
+          </text>
+        </g>
       </svg>
       
       {/* Hex Info Panel */}
