@@ -5,6 +5,7 @@
 
 import { getActivityById } from '../data/activities.js';
 import { getControlDC, getSizeData, getProficiencyBonus, getAbilityForSkill } from '../data/reference.js';
+import { getInvestedLeaderBonus } from './upkeepEngine.js';
 
 // Dice utilities
 const rollDie = (sides) => Math.floor(Math.random() * sides) + 1;
@@ -36,10 +37,13 @@ export const getSkillModifier = (state, skillName) => {
   // Unrest penalty
   const unrestPenalty = state.unrest >= 15 ? 4 : state.unrest >= 10 ? 3 : state.unrest >= 5 ? 2 : state.unrest >= 1 ? 1 : 0;
   
+  // Invested leader bonus
+  const leaderBonus = getInvestedLeaderBonus(state, skillName);
+  
   // TODO: Add item bonuses from structures
   // TODO: Add circumstance bonuses/penalties
   
-  return abilityMod + profBonus - unrestPenalty;
+  return abilityMod + profBonus - unrestPenalty + leaderBonus;
 };
 
 /**

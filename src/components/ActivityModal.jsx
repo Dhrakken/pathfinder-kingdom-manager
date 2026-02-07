@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { executeActivity } from '../engine/activityEngine.js';
 import { getAbilityForSkill, getProficiencyBonus } from '../data/reference.js';
+import { getInvestedLeaderBonus } from '../engine/upkeepEngine.js';
 
 // Outcome degree colors and icons
 const DEGREE_STYLES = {
@@ -117,20 +118,31 @@ export default function ActivityModal({
     }
   }, [activity, state.hexMap]);
   
-  // Get skill modifier for display
-  const skillMod = useMemo(() => {
+  // Get skill modifier breakdown for display
+  const skillInfo = useMemo(() => {
     if (!activity.skill || activity.skill === 'none' || activity.skill === 'varies') return null;
     
     const ability = getAbilityForSkill(activity.skill);
-    if (!ability) return 0;
+    if (!ability) return { total: 0, breakdown: [] };
     
     const abilityScore = state.abilities[ability] || 10;
     const abilityMod = Math.floor((abilityScore - 10) / 2);
     const proficiency = state.skillProficiencies?.[activity.skill] || 'Untrained';
     const profBonus = getProficiencyBonus(proficiency, state.kingdom.level);
     const unrestPenalty = state.unrest >= 15 ? 4 : state.unrest >= 10 ? 3 : state.unrest >= 5 ? 2 : state.unrest >= 1 ? 1 : 0;
+    const leaderBonus = getInvestedLeaderBonus(state, activity.skill);
     
-    return abilityMod + profBonus - unrestPenalty;
+    const total = abilityMod + profBonus - unrestPenalty + leaderBonus;
+    
+    return {
+      total,
+      ability,
+      abilityMod,
+      proficiency,
+      profBonus,
+      unrestPenalty,
+      leaderBonus,
+    };
   }, [activity.skill, state]);
   
   const handleExecute = () => {
@@ -204,19 +216,37 @@ export default function ActivityModal({
         <p className="text-gray-300 mb-4">{activity.desc}</p>
         
         {/* Skill Info */}
-        {activity.skill && activity.skill !== 'none' && activity.skill !== 'varies' && (
+        {activity.skill && activity.skill !== 'none' && activity.skill !== 'varies' && skillInfo && (
           <div className="bg-white/5 rounded p-3 mb-4">
             <div className="flex items-center justify-between">
               <span className="text-gray-400">Skill:</span>
-              <span className="text-white">{activity.skill}</span>
+              <span className="text-white">{activity.skill} ({skillInfo.ability})</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-gray-400">Modifier:</span>
-              <span className="text-white">{skillMod >= 0 ? '+' : ''}{skillMod}</span>
+              <span className="text-gray-400">Total Modifier:</span>
+              <span className="text-white font-bold">{skillInfo.total >= 0 ? '+' : ''}{skillInfo.total}</span>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-400">Proficiency:</span>
-              <span className="text-white">{state.skillProficiencies?.[activity.skill] || 'Untrained'}</span>
+            <div className="text-xs text-gray-500 mt-2 space-y-0.5">
+              <div className="flex justify-between">
+                <span>Ability ({skillInfo.ability}):</span>
+                <span>{skillInfo.abilityMod >= 0 ? '+' : ''}{skillInfo.abilityMod}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Proficiency ({skillInfo.proficiency}):</span>
+                <span>{skillInfo.profBonus > 0 ? `+${skillInfo.profBonus}` : '+0'}</span>
+              </div>
+              {skillInfo.leaderBonus > 0 && (
+                <div className="flex justify-between text-green-400">
+                  <span>Invested Leader:</span>
+                  <span>+{skillInfo.leaderBonus}</span>
+                </div>
+              )}
+              {skillInfo.unrestPenalty > 0 && (
+                <div className="flex justify-between text-red-400">
+                  <span>Unrest Penalty:</span>
+                  <span>-{skillInfo.unrestPenalty}</span>
+                </div>
+              )}
             </div>
           </div>
         )}

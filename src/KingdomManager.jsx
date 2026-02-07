@@ -20,6 +20,7 @@ import HexMap from './components/HexMap.jsx';
 import StolenLandsMap from './components/StolenLandsMap.jsx';
 import ActivityModal from './components/ActivityModal.jsx';
 import { HEX_STATUS, parseImportedMapData } from './utils/hexUtils.js';
+import { runFullUpkeep, checkLeadershipVacancies } from './engine/upkeepEngine.js';
 
 // ============================================
 // PHASES
@@ -424,6 +425,24 @@ export default function KingdomManager() {
           })}
         </div>
         <div className="mt-4 flex gap-2">
+          {state.turn.phase === 'upkeep' && !state.turn.phaseComplete.upkeep && (
+            <button
+              onClick={() => {
+                const result = runFullUpkeep(state);
+                setState(result.state);
+                // Log all upkeep steps
+                for (const step of result.logs) {
+                  for (const msg of step.logs) {
+                    addLog(`[${step.step}] ${msg}`, msg.includes('+') && msg.includes('Unrest') ? 'failure' : 'info');
+                  }
+                }
+                addLog('Upkeep Phase complete', 'success');
+              }}
+              className="btn-royal flex items-center gap-2"
+            >
+              <Calendar className="w-4 h-4" /> Run Full Upkeep
+            </button>
+          )}
           <button onClick={advancePhase} className="btn-royal flex items-center gap-2"><ChevronRight className="w-4 h-4" /> Advance Phase</button>
           {state.turn.phase === 'event' && <button onClick={endTurn} className="btn-secondary">End Turn</button>}
         </div>
@@ -445,8 +464,16 @@ export default function KingdomManager() {
             <h3 className="text-yellow-400 font-semibold flex items-center gap-2"><Coins className="w-5 h-5" /> Resource Points</h3>
             <span className="text-2xl font-bold">{state.resources.rp} RP</span>
           </div>
-          {state.turn.phase === 'upkeep' && <button onClick={rollResourceDice} className="btn-royal w-full flex items-center justify-center gap-2"><Dice6 className="w-4 h-4" /> Roll Resource Dice ({state.kingdom.level + 4}d{sizeData.die})</button>}
-          {diceResult && <div className="mt-2 p-2 bg-black/30 rounded text-sm">Rolled: [{diceResult.rolls.join(', ')}] = {diceResult.total} RP</div>}
+          {state.turn.phase === 'upkeep' && !state.turn.phaseComplete.upkeep && (
+            <button onClick={rollResourceDice} className="btn-secondary w-full flex items-center justify-center gap-2">
+              <Dice6 className="w-4 h-4" /> Roll Resource Dice ({state.kingdom.level + 4}d{sizeData.die})
+            </button>
+          )}
+          {(diceResult || state.turn.resourceDiceResult) && (
+            <div className="mt-2 p-2 bg-black/30 rounded text-sm">
+              Last roll: {state.turn.resourceDiceResult || diceResult?.total} RP
+            </div>
+          )}
         </div>
 
         <div className="glass-card p-4">
@@ -458,7 +485,15 @@ export default function KingdomManager() {
             <div className="commodity-card"><Mountain className="w-5 h-5 mx-auto mb-1 text-orange-400" /><div className="text-lg font-bold">{state.resources.ore}</div><div className="text-xs text-gray-400">Ore</div></div>
             <div className="commodity-card"><div className="w-5 h-5 mx-auto mb-1 bg-gray-400 rounded" /><div className="text-lg font-bold">{state.resources.stone}</div><div className="text-xs text-gray-400">Stone</div></div>
           </div>
-          {state.turn.phase === 'upkeep' && <div className="mt-3 flex gap-2"><button onClick={collectWorkSites} className="btn-secondary flex-1">Collect Work Sites</button><button onClick={payConsumption} className="btn-secondary flex-1">Pay Consumption ({state.consumption})</button></div>}
+          {state.turn.phase === 'upkeep' && !state.turn.phaseComplete.upkeep && (
+            <div className="mt-3 flex gap-2">
+              <button onClick={collectWorkSites} className="btn-secondary flex-1">Collect Work Sites</button>
+              <button onClick={payConsumption} className="btn-secondary flex-1">Pay Consumption ({state.consumption})</button>
+            </div>
+          )}
+          {state.turn.phaseComplete.upkeep && (
+            <div className="mt-3 text-sm text-green-400 text-center">✓ Upkeep complete</div>
+          )}
         </div>
       </div>
 
