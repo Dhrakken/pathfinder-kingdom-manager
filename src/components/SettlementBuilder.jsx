@@ -13,6 +13,20 @@ const BUILDING_IMAGES = {
   'temple': `${BASE}assets/buildings/temple-1.png`,
   'shrine': `${BASE}assets/buildings/temple-2.png`,
   'granary': `${BASE}assets/buildings/cottage-2.png`,
+  'smithy': `${BASE}assets/buildings/smithy-1.png`,
+  'brewery': `${BASE}assets/buildings/brewery-1.png`,
+  'shop': `${BASE}assets/buildings/general-store.png`,
+  'graveyard': `${BASE}assets/buildings/cemetery.png`,
+  'herbalist': `${BASE}assets/buildings/herbalist.png`,
+  'mill': `${BASE}assets/buildings/mill.png`,
+  'stable': `${BASE}assets/buildings/stable.png`,
+  'watchtower': `${BASE}assets/buildings/watchtower.png`,
+  'masons-guild': `${BASE}assets/buildings/stonemason.png`,
+  'stockyard': `${BASE}assets/buildings/stockyard.png`,
+  'barracks': `${BASE}assets/buildings/barracks.png`,
+  'market': `${BASE}assets/buildings/marketplace.png`,
+  'castle': `${BASE}assets/buildings/castle.png`,
+  'town-hall': `${BASE}assets/buildings/town-hall.png`,
 };
 
 // ── Isometric math ──────────────────────────────────────────────
