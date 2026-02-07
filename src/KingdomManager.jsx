@@ -25,6 +25,7 @@ import KingdomCreationWizard from './components/KingdomCreationWizard.jsx';
 import LevelUpModal from './components/LevelUpModal.jsx';
 import SkillsPanel from './components/SkillsPanel.jsx';
 import SettlementBuilder from './components/SettlementBuilder.jsx';
+import SettlementMap from './components/SettlementMap.jsx';
 import { checkLevelUp, checkMilestones, awardMilestones, getXPToNextLevel } from './engine/progressionEngine.js';
 import { HEX_STATUS, parseImportedMapData } from './utils/hexUtils.js';
 import { runFullUpkeep, checkLeadershipVacancies } from './engine/upkeepEngine.js';
@@ -124,8 +125,23 @@ const createInitialState = () => {
         id: 'lakewatch',
         name: 'Lakewatch',
         isCapital: true,
-        blocks: 6,
-        structures: ['town-hall', 'houses', 'houses', 'inn', 'shrine', 'general-store'],
+        blocks: 2,
+        mapConfig: {
+          rows: 3,
+          cols: 3,
+          waterfront: 'south', // Lake is to the south
+        },
+        structurePlacements: [
+          // Block A - Town Hall (2 lots), Houses, General Store
+          { block: 'A', lot: 1, structureId: 'town-hall', lotsUsed: 2 },
+          { block: 'A', lot: 3, structureId: 'houses', lotsUsed: 1 },
+          { block: 'A', lot: 4, structureId: 'general-store', lotsUsed: 1 },
+          // Block G (waterfront) - Houses, Mill
+          { block: 'G', lot: 1, structureId: 'houses', lotsUsed: 1 },
+          { block: 'G', lot: 2, structureId: 'mill', lotsUsed: 1 },
+        ],
+        // Legacy format for backwards compatibility
+        structures: ['town-hall', 'houses', 'general-store', 'houses', 'mill'],
       },
     ],
     turn: {
@@ -796,7 +812,7 @@ export default function KingdomManager() {
           </div>
         ) : (
           state.settlements.map(settlement => (
-            <SettlementBuilder
+            <SettlementMap
               key={settlement.id}
               settlement={settlement}
               state={state}
