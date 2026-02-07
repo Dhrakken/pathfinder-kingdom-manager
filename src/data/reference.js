@@ -37,7 +37,7 @@ export const ABILITIES = ['Culture', 'Economy', 'Loyalty', 'Stability'];
 
 export const SKILLS = {
   Culture: ['Arts', 'Folklore', 'Magic', 'Scholarship'],
-  Economy: ['Boating', 'Engineering', 'Industry', 'Trade'],
+  Economy: ['Boating', 'Engineering', 'Exploration', 'Industry', 'Trade'],
   Loyalty: ['Intrigue', 'Politics', 'Statecraft', 'Warfare'],
   Stability: ['Agriculture', 'Defense', 'Wilderness'],
 };
