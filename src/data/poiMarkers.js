@@ -2,26 +2,33 @@
 // These are absolute pixel positions on the map image
 
 export const POI_TYPES = {
-  camp: { icon: 'Tent', color: '#FF6B35', label: 'Camp' },
-  cabane: { icon: 'Store', color: '#8B4513', label: 'Hut' },
-  sign: { icon: 'MapPin', color: '#DEB887', label: 'Sign' },
+  // Structures
   village: { icon: 'Building', color: '#D4AF37', label: 'Settlement' },
-  dolmen: { icon: 'Landmark', color: '#6B5B95', label: 'Landmark' },
-  mine: { icon: 'Hammer', color: '#708090', label: 'Mine' },
-  lake: { icon: 'Fish', color: '#4169E1', label: 'Lake' },
-  swamp: { icon: 'Droplet', color: '#556B2F', label: 'Swamp' },
-  hill: { icon: 'Mountain', color: '#8FBC8F', label: 'Hill/Island' },
-  house: { icon: 'Home', color: '#8B0000', label: 'House' },
-  ruin: { icon: 'Skull', color: '#696969', label: 'Ruin' },
-  mushroom: { icon: 'Sparkles', color: '#9932CC', label: 'Magic/Special' },
+  house: { icon: 'Home', color: '#CD853F', label: 'House/Building' },
+  camp: { icon: 'Tent', color: '#FF6B35', label: 'Camp' },
+  cabane: { icon: 'Store', color: '#8B4513', label: 'Hut/Shack' },
+  mine: { icon: 'Pickaxe', color: '#708090', label: 'Mine' },
+  ruin: { icon: 'Skull', color: '#696969', label: 'Ruin/Dungeon' },
+  dolmen: { icon: 'Landmark', color: '#6B5B95', label: 'Temple/Shrine' },
+  
+  // Resources
+  farm: { icon: 'Wheat', color: '#DAA520', label: 'Farmland' },
+  tree: { icon: 'TreePine', color: '#228B22', label: 'Lumber Camp' },
   deadtree: { icon: 'TreeDeciduous', color: '#8B4513', label: 'Notable Tree' },
-  tree: { icon: 'TreePine', color: '#228B22', label: 'Notable Tree' },
-  farm: { icon: 'Wheat', color: '#DAA520', label: 'Farm' },
-  footmen: { icon: 'Footprints', color: '#B22222', label: 'Encounter' },
-  lizard: { icon: 'Ghost', color: '#2E8B57', label: 'Creature' },
+  mushroom: { icon: 'Sparkles', color: '#9932CC', label: 'Magic Resource' },
+  rock: { icon: 'Mountain', color: '#A0A0A0', label: 'Quarry' },
+  lake: { icon: 'Fish', color: '#4169E1', label: 'Fishing Spot' },
+  
+  // Points of Interest
+  sign: { icon: 'MapPin', color: '#DEB887', label: 'Location Marker' },
+  bridge: { icon: 'Link2', color: '#A0522D', label: 'Bridge/Crossing' },
   battle: { icon: 'Swords', color: '#DC143C', label: 'Battle Site' },
-  bridge: { icon: 'Link2', color: '#A0522D', label: 'Crossing' },
-  rock: { icon: 'Mountain', color: '#808080', label: 'Quarry' },
+  footmen: { icon: 'Footprints', color: '#B22222', label: 'Encounter' },
+  swamp: { icon: 'Droplet', color: '#556B2F', label: 'Swamp/Hazard' },
+  hill: { icon: 'Mountain', color: '#8FBC8F', label: 'Hill/Island' },
+  
+  // Creatures & Forces
+  lizard: { icon: 'Ghost', color: '#2E8B57', label: 'Creature Lair' },
 };
 
 // All POI markers from David's map (buildings, resources, misc, armies combined)

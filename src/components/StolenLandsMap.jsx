@@ -4,7 +4,7 @@ import {
   Mountain, TreePine, Tent, Store, MapPin, Building, Landmark, 
   Skull, Fish, Droplet, TreeDeciduous, Sparkles, Ghost,
   Swords, Footprints, Link2, Plus, Edit, Trash2, 
-  EyeOff, Users, Navigation, Crosshair
+  EyeOff, Users, Navigation, Crosshair, Pickaxe, Gem
 } from 'lucide-react';
 import { HEX_POSITIONS, MAP_WIDTH, MAP_HEIGHT, HEX_WIDTH, HEX_HEIGHT } from '../data/hexPositions.js';
 import { HEX_STATUS, WORK_SITE_TYPES, TERRAIN_TYPES } from '../utils/hexUtils.js';
@@ -36,7 +36,7 @@ const getPointyTopHexPoints = (x, y) => {
 const POI_ICON_MAP = {
   Tent, Store, MapPin, Building, Landmark, Skull, Fish, Droplet, 
   TreeDeciduous, Sparkles, Ghost, Swords, Footprints, Link2,
-  Hammer, Home, Wheat, TreePine, Mountain
+  Hammer, Home, Wheat, TreePine, Mountain, Flag, Pickaxe, Gem
 };
 
 // POI Marker component - now draggable
@@ -322,24 +322,56 @@ const ContextMenu = ({ x, y, items, onClose }) => {
   );
 };
 
-// POI Editor Modal
+// Icon option with preview
+const IconOption = ({ type, isSelected, onClick }) => {
+  const typeInfo = POI_TYPES[type] || { icon: 'Flag', color: '#999', label: type };
+  const IconComponent = POI_ICON_MAP[typeInfo.icon] || Flag;
+  
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-3 w-full px-3 py-2 rounded transition-colors ${
+        isSelected 
+          ? 'bg-yellow-600/30 border border-yellow-500' 
+          : 'bg-gray-800 hover:bg-gray-700 border border-transparent'
+      }`}
+    >
+      <div 
+        className="w-8 h-8 rounded-full flex items-center justify-center"
+        style={{ backgroundColor: 'rgba(0,0,0,0.8)', border: `2px solid ${typeInfo.color}` }}
+      >
+        <IconComponent size={18} color={typeInfo.color} />
+      </div>
+      <span className={isSelected ? 'text-yellow-400' : 'text-gray-200'}>{typeInfo.label}</span>
+    </button>
+  );
+};
+
+// POI Editor Modal with icon previews
 const POIEditorModal = ({ poi, isNew, onSave, onDelete, onClose }) => {
   const [title, setTitle] = useState(poi?.title || '');
   const [poiType, setPOIType] = useState(poi?.type || 'camp');
   const [category, setCategory] = useState(poi?.elementType || 'building');
   
   const categories = [
-    { id: 'building', label: 'Buildings' },
-    { id: 'resources', label: 'Resources' },
-    { id: 'misc', label: 'Misc' },
-    { id: 'armies', label: 'Armies' },
+    { id: 'building', label: 'Structures', icon: Building },
+    { id: 'resources', label: 'Resources', icon: Wheat },
+    { id: 'misc', label: 'Points of Interest', icon: MapPin },
+    { id: 'armies', label: 'Creatures & Forces', icon: Swords },
   ];
   
+  // Organized types with cleaner groupings
   const typesByCategory = {
-    building: ['camp', 'cabane', 'sign', 'village', 'dolmen', 'mine', 'lake', 'swamp', 'hill', 'house', 'ruin'],
-    resources: ['mushroom', 'deadtree', 'tree', 'mine', 'farm', 'footmen'],
-    misc: ['lizard', 'battle', 'bridge', 'rock', 'farm'],
+    building: ['village', 'house', 'camp', 'cabane', 'mine', 'ruin', 'dolmen'],
+    resources: ['farm', 'tree', 'deadtree', 'mushroom', 'rock', 'lake'],
+    misc: ['sign', 'bridge', 'battle', 'footmen', 'swamp', 'hill'],
     armies: ['lizard'],
+  };
+  
+  // When category changes, select first type in that category
+  const handleCategoryChange = (newCategory) => {
+    setCategory(newCategory);
+    setPOIType(typesByCategory[newCategory][0]);
   };
   
   const handleSave = () => {
@@ -351,45 +383,71 @@ const POIEditorModal = ({ poi, isNew, onSave, onDelete, onClose }) => {
     });
   };
   
+  const selectedTypeInfo = POI_TYPES[poiType] || { icon: 'Flag', color: '#999', label: poiType };
+  const SelectedIcon = POI_ICON_MAP[selectedTypeInfo.icon] || Flag;
+  
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
-      <div className="bg-gray-900/95 border border-yellow-600/30 rounded-lg p-6 max-w-md w-full">
+      <div className="bg-gray-900/95 border border-yellow-600/30 rounded-lg p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto">
         <h3 className="text-xl font-semibold text-yellow-400 mb-4">
           {isNew ? 'Add New Marker' : 'Edit Marker'}
         </h3>
         
         <div className="space-y-4">
+          {/* Category tabs */}
           <div>
-            <label className="block text-sm text-gray-400 mb-1">Category</label>
-            <select 
-              value={category}
-              onChange={(e) => {
-                setCategory(e.target.value);
-                setPOIType(typesByCategory[e.target.value][0]);
-              }}
-              className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white"
-            >
-              {categories.map(cat => (
-                <option key={cat.id} value={cat.id}>{cat.label}</option>
-              ))}
-            </select>
+            <label className="block text-sm text-gray-400 mb-2">Category</label>
+            <div className="flex gap-1">
+              {categories.map(cat => {
+                const CatIcon = cat.icon;
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => handleCategoryChange(cat.id)}
+                    className={`flex-1 px-2 py-2 rounded text-xs flex flex-col items-center gap-1 transition-colors ${
+                      category === cat.id
+                        ? 'bg-yellow-600/30 border border-yellow-500 text-yellow-400'
+                        : 'bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-400'
+                    }`}
+                  >
+                    <CatIcon size={16} />
+                    <span>{cat.label}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
           
+          {/* Icon type grid with previews */}
           <div>
-            <label className="block text-sm text-gray-400 mb-1">Icon Type</label>
-            <select 
-              value={poiType}
-              onChange={(e) => setPOIType(e.target.value)}
-              className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white"
-            >
+            <label className="block text-sm text-gray-400 mb-2">Icon Type</label>
+            <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
               {typesByCategory[category]?.map(type => (
-                <option key={type} value={type}>
-                  {POI_TYPES[type]?.label || type}
-                </option>
+                <IconOption
+                  key={type}
+                  type={type}
+                  isSelected={poiType === type}
+                  onClick={() => setPOIType(type)}
+                />
               ))}
-            </select>
+            </div>
           </div>
           
+          {/* Preview of selected marker */}
+          <div className="flex items-center gap-3 p-3 bg-gray-800/50 rounded border border-gray-700">
+            <div 
+              className="w-12 h-12 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: 'rgba(0,0,0,0.9)', border: `3px solid ${selectedTypeInfo.color}` }}
+            >
+              <SelectedIcon size={28} color={selectedTypeInfo.color} />
+            </div>
+            <div>
+              <div className="text-sm text-gray-400">Preview</div>
+              <div className="text-white font-medium">{selectedTypeInfo.label}</div>
+            </div>
+          </div>
+          
+          {/* Notes/Title */}
           <div>
             <label className="block text-sm text-gray-400 mb-1">Title / Notes</label>
             <textarea 
