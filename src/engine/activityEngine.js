@@ -6,6 +6,7 @@
 import { getActivityById } from '../data/activities.js';
 import { getControlDC, getSizeData, getProficiencyBonus, getAbilityForSkill } from '../data/reference.js';
 import { getInvestedLeaderBonus } from './upkeepEngine.js';
+import { getItemBonusForActivity, getItemBonusForSkill } from './structureEngine.js';
 
 // Dice utilities
 const rollDie = (sides) => Math.floor(Math.random() * sides) + 1;
@@ -23,10 +24,22 @@ const rollDiceNotation = (notation) => {
 
 /**
  * Calculate skill modifier for a kingdom skill check
+ * @param {object} state - Kingdom state
+ * @param {string} skillName - Skill being used
+ * @param {string} activityId - Optional activity ID for activity-specific bonuses
+ * @returns {number} Total modifier
  */
-export const getSkillModifier = (state, skillName) => {
+export const getSkillModifier = (state, skillName, activityId = null) => {
+  const breakdown = getSkillModifierBreakdown(state, skillName, activityId);
+  return breakdown.total;
+};
+
+/**
+ * Get detailed breakdown of skill modifier components
+ */
+export const getSkillModifierBreakdown = (state, skillName, activityId = null) => {
   const ability = getAbilityForSkill(skillName);
-  if (!ability) return 0;
+  if (!ability) return { total: 0, components: [] };
   
   const abilityScore = state.abilities[ability] || 10;
   const abilityMod = Math.floor((abilityScore - 10) / 2);
@@ -40,20 +53,56 @@ export const getSkillModifier = (state, skillName) => {
   // Invested leader bonus
   const leaderBonus = getInvestedLeaderBonus(state, skillName);
   
-  // TODO: Add item bonuses from structures
-  // TODO: Add circumstance bonuses/penalties
+  // Item bonus from structures
+  let itemBonus = 0;
+  let itemBonusSource = null;
   
-  return abilityMod + profBonus - unrestPenalty + leaderBonus;
+  // First check for activity-specific bonus
+  if (activityId) {
+    const activityItemBonus = getItemBonusForActivity(state, activityId);
+    if (activityItemBonus.bonus > 0) {
+      itemBonus = activityItemBonus.bonus;
+      itemBonusSource = activityItemBonus.source;
+    }
+  }
+  
+  // If no activity bonus, check for skill bonus
+  if (itemBonus === 0) {
+    const skillItemBonus = getItemBonusForSkill(state, skillName);
+    if (skillItemBonus.bonus > 0) {
+      itemBonus = skillItemBonus.bonus;
+      itemBonusSource = skillItemBonus.source;
+    }
+  }
+  
+  const total = abilityMod + profBonus - unrestPenalty + leaderBonus + itemBonus;
+  
+  return {
+    total,
+    ability,
+    abilityMod,
+    proficiency,
+    profBonus,
+    unrestPenalty,
+    leaderBonus,
+    itemBonus,
+    itemBonusSource,
+  };
 };
 
 /**
  * Perform a skill check and determine degree of success
+ * @param {object} state - Kingdom state
+ * @param {string} skillName - Skill being used
+ * @param {number} dcModifier - DC adjustment
+ * @param {string} activityId - Optional activity ID for item bonuses
  */
-export const performSkillCheck = (state, skillName, dcModifier = 0) => {
+export const performSkillCheck = (state, skillName, dcModifier = 0, activityId = null) => {
   const sizeData = getSizeData(state.kingdom.hexes);
   const baseDC = getControlDC(state.kingdom.level) + sizeData.dcMod + dcModifier;
   
-  const modifier = getSkillModifier(state, skillName);
+  const modifierBreakdown = getSkillModifierBreakdown(state, skillName, activityId);
+  const modifier = modifierBreakdown.total;
   const roll = rollDie(20);
   const total = roll + modifier;
   
@@ -73,7 +122,14 @@ export const performSkillCheck = (state, skillName, dcModifier = 0) => {
     degree = 'failure';
   }
   
-  return { roll, modifier, total, dc: baseDC, degree };
+  return { 
+    roll, 
+    modifier, 
+    total, 
+    dc: baseDC, 
+    degree,
+    breakdown: modifierBreakdown,
+  };
 };
 
 /**
@@ -534,7 +590,8 @@ export const executeActivity = (state, activityId, inputs = {}) => {
   let degree = 'success';
   
   if (activity.skill && activity.skill !== 'none' && activity.skill !== 'varies') {
-    checkResult = performSkillCheck(workingState, activity.skill);
+    // Pass activityId to get activity-specific item bonuses from structures
+    checkResult = performSkillCheck(workingState, activity.skill, 0, activityId);
     degree = checkResult.degree;
     
     // Refund RP on failure if activity specifies

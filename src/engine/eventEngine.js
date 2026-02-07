@@ -4,7 +4,7 @@
 // ============================================
 
 import { getControlDC, getSizeData } from '../data/reference.js';
-import { getSkillModifier } from './activityEngine.js';
+import { getSkillModifier, getSkillModifierBreakdown } from './activityEngine.js';
 
 // Random event table (simplified - expandable later)
 export const KINGDOM_EVENTS = [

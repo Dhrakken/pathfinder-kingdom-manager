@@ -3,9 +3,10 @@ import {
   Dice6, CheckCircle, XCircle, AlertTriangle, ChevronRight,
   MapPin, Building, Users, Coins
 } from 'lucide-react';
-import { executeActivity } from '../engine/activityEngine.js';
+import { executeActivity, getSkillModifierBreakdown } from '../engine/activityEngine.js';
 import { getAbilityForSkill, getProficiencyBonus } from '../data/reference.js';
 import { getInvestedLeaderBonus } from '../engine/upkeepEngine.js';
+import { getItemBonusForActivity } from '../engine/structureEngine.js';
 
 // Outcome degree colors and icons
 const DEGREE_STYLES = {
@@ -122,28 +123,9 @@ export default function ActivityModal({
   const skillInfo = useMemo(() => {
     if (!activity.skill || activity.skill === 'none' || activity.skill === 'varies') return null;
     
-    const ability = getAbilityForSkill(activity.skill);
-    if (!ability) return { total: 0, breakdown: [] };
-    
-    const abilityScore = state.abilities[ability] || 10;
-    const abilityMod = Math.floor((abilityScore - 10) / 2);
-    const proficiency = state.skillProficiencies?.[activity.skill] || 'Untrained';
-    const profBonus = getProficiencyBonus(proficiency, state.kingdom.level);
-    const unrestPenalty = state.unrest >= 15 ? 4 : state.unrest >= 10 ? 3 : state.unrest >= 5 ? 2 : state.unrest >= 1 ? 1 : 0;
-    const leaderBonus = getInvestedLeaderBonus(state, activity.skill);
-    
-    const total = abilityMod + profBonus - unrestPenalty + leaderBonus;
-    
-    return {
-      total,
-      ability,
-      abilityMod,
-      proficiency,
-      profBonus,
-      unrestPenalty,
-      leaderBonus,
-    };
-  }, [activity.skill, state]);
+    // Use the engine's breakdown function to include item bonuses
+    return getSkillModifierBreakdown(state, activity.skill, activity.id);
+  }, [activity.skill, activity.id, state]);
   
   const handleExecute = () => {
     setError(null);
@@ -239,6 +221,12 @@ export default function ActivityModal({
                 <div className="flex justify-between text-green-400">
                   <span>Invested Leader:</span>
                   <span>+{skillInfo.leaderBonus}</span>
+                </div>
+              )}
+              {skillInfo.itemBonus > 0 && (
+                <div className="flex justify-between text-blue-400">
+                  <span title={skillInfo.itemBonusSource}>Item ({skillInfo.itemBonusSource?.split(' in ')[0] || 'Structure'}):</span>
+                  <span>+{skillInfo.itemBonus}</span>
                 </div>
               )}
               {skillInfo.unrestPenalty > 0 && (
