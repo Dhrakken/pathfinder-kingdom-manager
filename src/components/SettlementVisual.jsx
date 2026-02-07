@@ -5,176 +5,60 @@ import {
 } from 'lucide-react';
 import { STRUCTURES, getStructureById, getStructuresByLevel } from '../data/structures.js';
 
-// Tilemap is 192x176 pixels, 12x11 tiles of 16x16 each
-const TILE_SIZE = 16;
-const TILEMAP_COLS = 12;
-
-// Get pixel position for a tile index
-const getTilePos = (index) => {
-  const col = index % TILEMAP_COLS;
-  const row = Math.floor(index / TILEMAP_COLS);
-  return { x: col * TILE_SIZE, y: row * TILE_SIZE };
+// Map structure IDs to Medieval RTS building sprites
+// These are complete building images, not tiles
+const BUILDING_IMAGES = {
+  // Basic housing
+  'houses': 'medievalStructure_05.png', // Small house
+  'tenement': 'medievalStructure_06.png', // Another house style
+  
+  // Commercial
+  'general-store': 'medievalStructure_09.png', // Shop/store
+  'marketplace': 'medievalStructure_11.png', // Market stall
+  'inn': 'medievalStructure_07.png', // Inn building
+  'tavern': 'medievalStructure_08.png', // Tavern
+  
+  // Religious
+  'shrine': 'medievalStructure_03.png', // Small shrine
+  'temple': 'medievalStructure_04.png', // Larger temple
+  'cemetery': 'medievalStructure_12.png',
+  
+  // Industrial  
+  'mill': 'medievalStructure_21.png', // Windmill
+  'smithy': 'medievalStructure_16.png', // Forge/smithy
+  'lumber-yard': 'medievalStructure_19.png',
+  'foundry': 'medievalStructure_17.png',
+  'granary': 'medievalStructure_10.png', // Storage building
+  'stockyard': 'medievalStructure_18.png',
+  
+  // Military/Defense
+  'barracks': 'medievalStructure_13.png', // Military building
+  'garrison': 'medievalStructure_14.png', // Larger military
+  'castle': 'medievalStructure_15.png', // Castle
+  'wooden-walls': 'medievalStructure_22.png',
+  'stone-walls': 'medievalStructure_23.png',
+  'watchtower': 'medievalStructure_20.png',
+  
+  // Government
+  'town-hall': 'medievalStructure_01.png', // Large official building
+  'palace': 'medievalStructure_02.png', // Grand building
+  
+  // Default fallback
+  'default': 'medievalStructure_05.png',
 };
 
-// Building definitions - which tiles make up each structure
-// Tilemap is 12 columns × 11 rows (192×176px, 16×16 tiles)
-// Row 0-1: Trees, terrain  |  Row 2-4: Wooden houses (orange/brown roofs)
-// Row 5: Red brick & gray stone  |  Row 6-7: Castle walls & gates
-// Row 8: Water, props  |  Row 9-10: People
-const BUILDING_SPRITES = {
-  // Small wooden houses (1 lot) - 2x2 tiles
-  'houses': {
-    village: [[24, 25], [36, 37]], // Orange roof wooden cottage
-    town: [[26, 27], [38, 39]], // Brown roof house
-    city: [[60, 61], [72, 73]], // Red brick house
-  },
-  'tenement': {
-    village: [[26, 27], [38, 39]],
-    town: [[28, 29], [40, 41]],
-    city: [[62, 63], [74, 75]],
-  },
-  
-  // Inn/Tavern (1 lot) - 2x2 with distinct look
-  'inn': {
-    village: [[30, 31], [42, 43]], // Wooden with different roof
-    town: [[28, 29], [40, 41]],
-    city: [[64, 65], [76, 77]], // Stone building
-  },
-  'tavern': {
-    village: [[30, 31], [42, 43]],
-    town: [[26, 27], [38, 39]],
-    city: [[62, 63], [74, 75]],
-  },
-  
-  // General Store / Shops
-  'general-store': {
-    village: [[24, 25], [36, 37]],
-    town: [[28, 29], [40, 41]],
-    city: [[60, 61], [72, 73]],
-  },
-  'marketplace': {
-    village: [[32, 33], [44, 45]], // Stall-like structure
-    town: [[32, 33], [44, 45]],
-    city: [[32, 33], [44, 45]],
-  },
-  
-  // Town Hall (2 lots) - 4x2 tiles (wide building)
-  'town-hall': {
-    village: [[24, 25, 26, 27], [36, 37, 38, 39]],
-    town: [[60, 61, 62, 63], [72, 73, 74, 75]],
-    city: [[64, 65, 66, 67], [76, 77, 78, 79]],
-  },
-  
-  // Castle (4 lots) - 4x4 tiles with castle walls
-  'castle': {
-    village: [[72, 73, 74, 75], [84, 85, 86, 87], [72, 73, 74, 75], [84, 85, 86, 87]],
-    town: [[72, 73, 74, 75], [84, 85, 86, 87], [72, 73, 74, 75], [84, 85, 86, 87]],
-    city: [[72, 73, 74, 75], [84, 85, 86, 87], [72, 73, 74, 75], [84, 85, 86, 87]],
-  },
-  
-  // Shrine/Temple
-  'shrine': {
-    village: [[24, 25], [36, 37]],
-    town: [[64, 65], [76, 77]],
-    city: [[66, 67], [78, 79]],
-  },
-  'temple': {
-    village: [[28, 29], [40, 41]],
-    town: [[64, 65, 66], [76, 77, 78]],
-    city: [[64, 65, 66, 67], [76, 77, 78, 79]],
-  },
-  
-  // Mill
-  'mill': {
-    village: [[34, 35], [46, 47]],
-    town: [[34, 35], [46, 47]],
-    city: [[34, 35], [46, 47]],
-  },
-  
-  // Walls/Fortifications - use castle wall tiles
-  'wooden-walls': {
-    village: [[88, 89], [88, 89]], // Fence sections
-    town: [[88, 89], [88, 89]],
-    city: [[88, 89], [88, 89]],
-  },
-  'stone-walls': {
-    village: [[72, 73], [84, 85]], // Stone wall sections  
-    town: [[72, 73], [84, 85]],
-    city: [[72, 73], [84, 85]],
-  },
-  
-  // Default fallback - basic cottage
-  'default': {
-    village: [[24, 25], [36, 37]], // Orange roof cottage
-    town: [[60, 61], [72, 73]], // Red brick
-    city: [[64, 65], [76, 77]], // Stone
-  },
+// Get building image path
+const getBuildingImage = (structureId) => {
+  const filename = BUILDING_IMAGES[structureId] || BUILDING_IMAGES['default'];
+  return `${import.meta.env.BASE_URL}buildings/${filename}`;
 };
 
-// Ground tiles
-const GROUND_TILES = {
-  grass: 12, // Green grass
-  water: 18, // Water
-  dirt: 13, // Dirt path
-  stone: 14, // Stone path
-  waterfront: 19, // Water edge
-};
-
-// Get settlement level tier
-const getSettlementTier = (blocks) => {
-  if (blocks <= 4) return 'village';
-  if (blocks <= 8) return 'town';
-  return 'city';
-};
-
-// Tile component - renders a single 16x16 tile from the tilemap
-const Tile = ({ index, scale = 3 }) => {
-  if (index === null || index === undefined) return <div style={{ width: TILE_SIZE * scale, height: TILE_SIZE * scale }} />;
-  
-  const pos = getTilePos(index);
-  
-  return (
-    <div
-      style={{
-        width: TILE_SIZE * scale,
-        height: TILE_SIZE * scale,
-        backgroundImage: `url(${import.meta.env.BASE_URL}tilemap.png)`,
-        backgroundPosition: `-${pos.x * scale}px -${pos.y * scale}px`,
-        backgroundSize: `${192 * scale}px ${176 * scale}px`,
-        imageRendering: 'pixelated',
-      }}
-    />
-  );
-};
-
-// Building component - renders a building from multiple tiles
-const Building = ({ structureId, tier = 'village', scale = 2, onClick }) => {
-  const sprites = BUILDING_SPRITES[structureId] || BUILDING_SPRITES['default'];
-  const tileGrid = sprites[tier] || sprites['village'];
-  
-  return (
-    <div 
-      className="cursor-pointer hover:brightness-110 transition-all"
-      onClick={onClick}
-      style={{
-        display: 'grid',
-        gridTemplateColumns: `repeat(${tileGrid[0].length}, ${TILE_SIZE * scale}px)`,
-        gap: 0,
-      }}
-    >
-      {tileGrid.map((row, rowIndex) =>
-        row.map((tileIndex, colIndex) => (
-          <Tile key={`${rowIndex}-${colIndex}`} index={tileIndex} scale={scale} />
-        ))
-      )}
-    </div>
-  );
-};
-
-// Ground tile component
-const GroundTile = ({ type = 'grass', scale = 3 }) => {
-  const index = GROUND_TILES[type] || GROUND_TILES.grass;
-  return <Tile index={index} scale={scale} />;
+// Get settlement type based on blocks
+const getSettlementType = (blocks) => {
+  if (blocks <= 4) return { name: 'Village', tier: 'village' };
+  if (blocks <= 8) return { name: 'Town', tier: 'town' };
+  if (blocks <= 16) return { name: 'City', tier: 'city' };
+  return { name: 'Metropolis', tier: 'metropolis' };
 };
 
 export default function SettlementVisual({ 
@@ -198,13 +82,13 @@ export default function SettlementVisual({
     waterfront: 'south',
   };
   
-  // Calculate settlement tier based on blocks used
+  // Calculate settlement tier
   const usedBlocks = new Set(
     (settlement.structurePlacements || []).map(p => p.block)
   ).size || 1;
-  const tier = getSettlementTier(usedBlocks);
+  const { name: settlementTypeName, tier } = getSettlementType(usedBlocks);
   
-  // Get structures placed
+  // Get structures placed in each block
   const structureMap = useMemo(() => {
     const map = {};
     const placements = settlement.structurePlacements || [];
@@ -253,6 +137,8 @@ export default function SettlementVisual({
     switch (config.waterfront) {
       case 'south': return row === config.rows - 1;
       case 'north': return row === 0;
+      case 'east': return blockIndex % config.cols === config.cols - 1;
+      case 'west': return blockIndex % config.cols === 0;
       default: return false;
     }
   };
@@ -272,7 +158,7 @@ export default function SettlementVisual({
     if (cost.luxuries) newResources.luxuries -= cost.luxuries;
     
     // Add placement
-    const blockLabel = String.fromCharCode(65 + selectedSlot); // A, B, C...
+    const blockLabel = String.fromCharCode(65 + selectedSlot);
     const newPlacements = [...(settlement.structurePlacements || [])];
     
     newPlacements.push({
@@ -315,17 +201,7 @@ export default function SettlementVisual({
     onLog?.(`Demolished ${structure?.name || 'structure'} in ${settlement.name}`, 'info');
   };
   
-  // Get settlement type name
-  const getSettlementType = () => {
-    if (usedBlocks <= 4) return 'Village';
-    if (usedBlocks <= 8) return 'Town';
-    if (usedBlocks <= 16) return 'City';
-    return 'Metropolis';
-  };
-  
   const totalSlots = config.rows * config.cols;
-  const scale = 3; // Tile scale factor
-  const slotSize = TILE_SIZE * scale * 4; // 4 tiles per lot side
   
   return (
     <div className="glass-card p-4">
@@ -341,9 +217,12 @@ export default function SettlementVisual({
             )}
           </h3>
           <div className="text-sm text-gray-400">
-            {getSettlementType()} • {usedBlocks} blocks
+            {settlementTypeName} • {usedBlocks} block{usedBlocks !== 1 ? 's' : ''}
             {config.waterfront !== 'none' && (
-              <span className="text-blue-400 ml-2">• Lakefront</span>
+              <span className="text-blue-400 ml-2">
+                <Waves className="w-3 h-3 inline mr-1" />
+                Lakefront
+              </span>
             )}
           </div>
         </div>
@@ -361,39 +240,35 @@ export default function SettlementVisual({
       
       {/* Visual Settlement Grid */}
       <div 
-        className="relative mx-auto rounded-lg overflow-hidden border-4 border-amber-900/50"
+        className="relative mx-auto rounded-lg overflow-hidden"
         style={{
           display: 'grid',
-          gridTemplateColumns: `repeat(${config.cols}, ${slotSize}px)`,
+          gridTemplateColumns: `repeat(${config.cols}, 140px)`,
           gap: 4,
           padding: 8,
-          background: 'linear-gradient(135deg, #2d5016 0%, #1a3a0a 100%)',
+          background: 'linear-gradient(135deg, #2d5a16 0%, #1a4a0a 100%)',
+          border: '4px solid rgba(139, 90, 43, 0.6)',
         }}
       >
         {Array(totalSlots).fill(null).map((_, slotIndex) => {
           const blockLabel = String.fromCharCode(65 + slotIndex);
           const placements = structureMap[blockLabel] || [];
           const onWaterfront = isWaterfront(slotIndex);
-          const row = Math.floor(slotIndex / config.cols);
           
           return (
             <div
               key={slotIndex}
               className={`
-                relative rounded transition-all
-                ${onWaterfront ? 'bg-blue-600/30' : 'bg-green-900/20'}
-                ${placements.length === 0 ? 'hover:bg-yellow-500/20 cursor-pointer' : ''}
-                border-2 border-dashed
-                ${onWaterfront ? 'border-blue-400/30' : 'border-green-700/30'}
+                relative rounded-lg transition-all overflow-hidden
+                ${placements.length === 0 ? 'hover:ring-2 hover:ring-yellow-500/50 cursor-pointer' : ''}
               `}
               style={{
-                width: slotSize,
-                height: slotSize,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 4,
+                width: 140,
+                height: 120,
+                background: onWaterfront 
+                  ? 'linear-gradient(to bottom, #3a6b35 60%, #2563eb40 100%)'
+                  : '#3a6b35',
+                border: '2px solid rgba(0,0,0,0.3)',
               }}
               onClick={() => {
                 if (placements.length === 0) {
@@ -403,70 +278,89 @@ export default function SettlementVisual({
               }}
             >
               {/* Block label */}
-              <div className="absolute top-1 left-2 text-xs font-mono text-white/40">
+              <div className="absolute top-1 left-2 text-xs font-bold text-white/60 z-10">
                 {blockLabel}
               </div>
               
-              {/* Water effect for waterfront */}
+              {/* Grass texture pattern */}
+              <div 
+                className="absolute inset-0 opacity-20"
+                style={{
+                  backgroundImage: 'radial-gradient(circle, #228b22 1px, transparent 1px)',
+                  backgroundSize: '8px 8px',
+                }}
+              />
+              
+              {/* Water waves for waterfront */}
               {onWaterfront && (
-                <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-blue-500/40 to-transparent pointer-events-none" />
+                <div className="absolute bottom-0 left-0 right-0 h-8 overflow-hidden">
+                  <div 
+                    className="absolute bottom-0 w-full h-full"
+                    style={{
+                      background: 'linear-gradient(to top, rgba(37, 99, 235, 0.5), transparent)',
+                    }}
+                  />
+                  <svg className="absolute bottom-0 w-full h-3 text-blue-400/40" viewBox="0 0 100 10" preserveAspectRatio="none">
+                    <path d="M0 5 Q 12.5 0, 25 5 T 50 5 T 75 5 T 100 5 V 10 H 0 Z" fill="currentColor" />
+                  </svg>
+                </div>
               )}
               
               {/* Buildings in this block */}
               {placements.length > 0 ? (
-                <div className="relative group">
-                  {placements.map((placement, i) => (
-                    <div key={i} className="relative">
-                      <Building 
-                        structureId={placement.structureId} 
-                        tier={tier}
-                        scale={scale}
-                      />
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          demolishStructure(blockLabel, placement.structureId);
-                        }}
-                        className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
-                      >
-                        <X className="w-3 h-3 text-white" />
-                      </button>
-                      <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] text-white bg-black/60 px-1 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap">
-                        {getStructureById(placement.structureId)?.name}
+                <div className="absolute inset-0 flex flex-wrap items-center justify-center p-2 gap-1">
+                  {placements.map((placement, i) => {
+                    const structure = getStructureById(placement.structureId);
+                    return (
+                      <div key={i} className="relative group">
+                        <img
+                          src={getBuildingImage(placement.structureId)}
+                          alt={structure?.name || 'Building'}
+                          className="h-16 w-auto object-contain drop-shadow-lg transition-transform group-hover:scale-110"
+                          style={{ imageRendering: 'pixelated' }}
+                        />
+                        {/* Demolish button */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            demolishStructure(blockLabel, placement.structureId);
+                          }}
+                          className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity shadow-lg"
+                        >
+                          <X className="w-3 h-3 text-white" />
+                        </button>
+                        {/* Building name tooltip */}
+                        <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] text-white bg-black/80 px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap z-20 pointer-events-none">
+                          {structure?.name}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
-                <Plus className="w-8 h-8 text-white/20" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Plus className="w-10 h-10 text-white/20" />
+                </div>
               )}
             </div>
           );
         })}
-        
-        {/* Water at the bottom if south waterfront */}
-        {config.waterfront === 'south' && (
-          <div 
-            className="absolute bottom-0 left-0 right-0 h-4 pointer-events-none"
-            style={{
-              background: 'linear-gradient(to top, rgba(59, 130, 246, 0.6), transparent)',
-            }}
-          />
-        )}
       </div>
       
       {/* Legend */}
       <div className="flex flex-wrap gap-4 text-xs text-gray-400 mt-4 justify-center">
         <div className="flex items-center gap-1">
-          <div className="w-3 h-3 bg-green-900/40 rounded" />
+          <div className="w-4 h-4 rounded" style={{ background: '#3a6b35' }} />
           <span>Land</span>
         </div>
-        <div className="flex items-center gap-1">
-          <div className="w-3 h-3 bg-blue-600/40 rounded" />
-          <span>Waterfront</span>
-        </div>
-        <div className="text-yellow-400">
-          Architecture: {tier.charAt(0).toUpperCase() + tier.slice(1)} style
+        {config.waterfront !== 'none' && (
+          <div className="flex items-center gap-1">
+            <div className="w-4 h-4 rounded" style={{ background: 'linear-gradient(to bottom, #3a6b35 50%, #2563eb60 100%)' }} />
+            <span>Waterfront</span>
+          </div>
+        )}
+        <div className="text-yellow-400/80">
+          {settlementTypeName} ({usedBlocks} block{usedBlocks !== 1 ? 's' : ''})
         </div>
       </div>
       
@@ -479,7 +373,13 @@ export default function SettlementVisual({
               placements.map((p, i) => {
                 const structure = getStructureById(p.structureId);
                 return (
-                  <span key={`${block}-${i}`} className="bg-purple-900/30 px-2 py-1 rounded">
+                  <span key={`${block}-${i}`} className="bg-purple-900/30 px-2 py-1 rounded flex items-center gap-1">
+                    <img 
+                      src={getBuildingImage(p.structureId)} 
+                      alt="" 
+                      className="w-4 h-4 object-contain"
+                      style={{ imageRendering: 'pixelated' }}
+                    />
                     <span className="text-purple-400 font-mono">{block}:</span>{' '}
                     <span className="text-yellow-400">{structure?.name}</span>
                   </span>
@@ -492,7 +392,7 @@ export default function SettlementVisual({
       
       {/* Build Modal */}
       {showBuildModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-gray-900 border border-yellow-600/30 rounded-lg max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
             {/* Modal Header */}
             <div className="p-4 border-b border-gray-800 flex items-center justify-between">
@@ -507,7 +407,7 @@ export default function SettlementVisual({
                 </div>
               </div>
               <button onClick={() => setShowBuildModal(false)} className="text-gray-400 hover:text-white">
-                <X className="w-5 h-5" />
+                <X className="w-6 h-6" />
               </button>
             </div>
             
@@ -526,15 +426,16 @@ export default function SettlementVisual({
                         key={i}
                         onClick={() => !hasBuildings && setSelectedSlot(i)}
                         disabled={hasBuildings}
-                        className={`w-12 h-12 rounded border-2 font-mono text-sm flex items-center justify-center ${
+                        className={`w-14 h-14 rounded-lg border-2 font-mono text-sm flex flex-col items-center justify-center transition-all ${
                           hasBuildings
                             ? 'border-purple-500/50 bg-purple-900/30 cursor-not-allowed opacity-50'
                             : onWater 
-                            ? 'border-blue-500/50 bg-blue-900/20 hover:bg-blue-900/40' 
-                            : 'border-gray-600 bg-gray-800 hover:bg-gray-700'
+                            ? 'border-blue-500/50 bg-blue-900/20 hover:bg-blue-900/40 hover:border-blue-400' 
+                            : 'border-gray-600 bg-gray-800 hover:bg-gray-700 hover:border-yellow-500'
                         }`}
                       >
-                        {blockLabel}
+                        <span className="font-bold">{blockLabel}</span>
+                        {onWater && <Waves className="w-3 h-3 text-blue-400 mt-0.5" />}
                       </button>
                     );
                   })}
@@ -543,7 +444,7 @@ export default function SettlementVisual({
             )}
             
             {/* Search & Filters */}
-            <div className="p-4 border-b border-gray-800 space-y-2">
+            <div className="p-4 border-b border-gray-800 space-y-3">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                 <input
@@ -551,25 +452,25 @@ export default function SettlementVisual({
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search structures..."
-                  className="w-full bg-gray-800 border border-gray-700 rounded pl-10 pr-3 py-2 text-sm"
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-10 pr-3 py-2 text-sm focus:border-yellow-500 focus:outline-none"
                 />
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <button
                   onClick={() => setFilterLevel(null)}
-                  className={`px-3 py-1 rounded text-xs ${filterLevel === null ? 'bg-yellow-500/20 text-yellow-400' : 'bg-gray-800 text-gray-400'}`}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${filterLevel === null ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50' : 'bg-gray-800 text-gray-400 border border-gray-700 hover:border-gray-500'}`}
                 >
-                  All
+                  All Levels
                 </button>
-                {[1, 2, 3].map(level => (
+                {[1, 2, 3, 4, 5].map(level => (
                   <button
                     key={level}
                     onClick={() => setFilterLevel(level)}
                     disabled={level > kingdomLevel}
-                    className={`px-3 py-1 rounded text-xs ${
-                      filterLevel === level ? 'bg-yellow-500/20 text-yellow-400' : 
-                      level > kingdomLevel ? 'bg-gray-800 text-gray-600 cursor-not-allowed' :
-                      'bg-gray-800 text-gray-400'
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                      filterLevel === level ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50' : 
+                      level > kingdomLevel ? 'bg-gray-800/50 text-gray-600 border border-gray-800 cursor-not-allowed' :
+                      'bg-gray-800 text-gray-400 border border-gray-700 hover:border-gray-500'
                     }`}
                   >
                     Level {level}
@@ -579,17 +480,17 @@ export default function SettlementVisual({
             </div>
             
             {/* Resources */}
-            <div className="px-4 py-2 bg-gray-800/50 flex items-center gap-4 text-sm">
-              <span className="text-gray-400">Available:</span>
-              <span className="text-yellow-400">{currentRP} RP</span>
+            <div className="px-4 py-2 bg-gray-800/50 flex items-center gap-4 text-sm border-b border-gray-800">
+              <span className="text-gray-500">Treasury:</span>
+              <span className="text-yellow-400 font-medium">{currentRP} RP</span>
               <span className="text-green-400">{state.resources?.lumber || 0} Lumber</span>
               <span className="text-gray-400">{state.resources?.stone || 0} Stone</span>
               <span className="text-orange-400">{state.resources?.ore || 0} Ore</span>
             </div>
             
-            {/* Structure List with Previews */}
+            {/* Structure List */}
             <div className="flex-1 overflow-y-auto p-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {availableStructures.map(structure => {
                   const affordable = canAfford(structure);
                   const cost = structure.cost || {};
@@ -597,33 +498,48 @@ export default function SettlementVisual({
                   return (
                     <div
                       key={structure.id}
-                      className={`p-3 rounded-lg border transition-all flex gap-3 ${
+                      className={`p-3 rounded-lg border-2 transition-all flex gap-3 ${
                         affordable && selectedSlot !== null
-                          ? 'bg-white/5 border-white/10 hover:border-yellow-500/50 cursor-pointer'
-                          : 'bg-gray-800/50 border-gray-700 opacity-60'
+                          ? 'bg-gray-800/50 border-gray-700 hover:border-yellow-500/50 hover:bg-gray-800 cursor-pointer'
+                          : 'bg-gray-800/30 border-gray-800 opacity-50'
                       }`}
                       onClick={() => affordable && selectedSlot !== null && buildStructure(structure)}
                     >
                       {/* Building Preview */}
-                      <div className="flex-shrink-0 bg-green-900/30 rounded p-1">
-                        <Building 
-                          structureId={structure.id} 
-                          tier={tier}
-                          scale={2}
+                      <div className="flex-shrink-0 w-16 h-16 bg-green-900/30 rounded-lg flex items-center justify-center">
+                        <img 
+                          src={getBuildingImage(structure.id)}
+                          alt={structure.name}
+                          className="max-w-full max-h-full object-contain"
+                          style={{ imageRendering: 'pixelated' }}
                         />
                       </div>
                       
                       {/* Info */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium text-yellow-400 truncate">{structure.name}</span>
-                          <span className="text-xs bg-gray-700 px-1.5 py-0.5 rounded flex-shrink-0">L{structure.level}</span>
+                          <span className="font-semibold text-yellow-400 truncate">{structure.name}</span>
+                          <span className="text-xs bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded flex-shrink-0">
+                            L{structure.level}
+                          </span>
                         </div>
                         <div className="text-xs text-gray-400 mt-1 line-clamp-2">{structure.effects}</div>
-                        <div className="flex gap-2 mt-1 text-xs">
-                          {cost.rp && <span className={currentRP >= cost.rp ? 'text-yellow-400' : 'text-red-400'}>{cost.rp} RP</span>}
-                          {cost.lumber && <span className={(state.resources?.lumber || 0) >= cost.lumber ? 'text-green-400' : 'text-red-400'}>{cost.lumber} Lum</span>}
-                          {cost.stone && <span className={(state.resources?.stone || 0) >= cost.stone ? 'text-gray-400' : 'text-red-400'}>{cost.stone} Stn</span>}
+                        <div className="flex gap-2 mt-2 text-xs">
+                          {cost.rp && (
+                            <span className={`px-1.5 py-0.5 rounded ${currentRP >= cost.rp ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}`}>
+                              {cost.rp} RP
+                            </span>
+                          )}
+                          {cost.lumber && (
+                            <span className={`px-1.5 py-0.5 rounded ${(state.resources?.lumber || 0) >= cost.lumber ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                              {cost.lumber} Lumber
+                            </span>
+                          )}
+                          {cost.stone && (
+                            <span className={`px-1.5 py-0.5 rounded ${(state.resources?.stone || 0) >= cost.stone ? 'bg-gray-500/20 text-gray-300' : 'bg-red-500/20 text-red-400'}`}>
+                              {cost.stone} Stone
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
