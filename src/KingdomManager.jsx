@@ -22,6 +22,7 @@ import ActivityModal from './components/ActivityModal.jsx';
 import { HEX_STATUS, parseImportedMapData } from './utils/hexUtils.js';
 import { runFullUpkeep, checkLeadershipVacancies } from './engine/upkeepEngine.js';
 import { runEventPhase, KINGDOM_EVENTS } from './engine/eventEngine.js';
+import { runCommercePhase, tradeCommodities, COMMODITY_BASE_VALUES } from './engine/commerceEngine.js';
 
 // ============================================
 // PHASES
@@ -442,6 +443,22 @@ export default function KingdomManager() {
               className="btn-royal flex items-center gap-2"
             >
               <Calendar className="w-4 h-4" /> Run Full Upkeep
+            </button>
+          )}
+          {state.turn.phase === 'commerce' && !state.turn.phaseComplete.commerce && (
+            <button
+              onClick={() => {
+                const result = runCommercePhase(state);
+                setState(result.state);
+                for (const step of result.logs) {
+                  for (const msg of step.logs) {
+                    addLog(`[${step.step}] ${msg}`, msg.includes('Critical Failure') ? 'failure' : 'info');
+                  }
+                }
+              }}
+              className="btn-royal flex items-center gap-2"
+            >
+              <Coins className="w-4 h-4" /> Collect Taxes
             </button>
           )}
           {state.turn.phase === 'event' && !state.turn.phaseComplete.event && (
