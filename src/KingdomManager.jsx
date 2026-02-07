@@ -21,6 +21,7 @@ import StolenLandsMap from './components/StolenLandsMap.jsx';
 import ActivityModal from './components/ActivityModal.jsx';
 import { HEX_STATUS, parseImportedMapData } from './utils/hexUtils.js';
 import { runFullUpkeep, checkLeadershipVacancies } from './engine/upkeepEngine.js';
+import { runEventPhase, KINGDOM_EVENTS } from './engine/eventEngine.js';
 
 // ============================================
 // PHASES
@@ -424,7 +425,7 @@ export default function KingdomManager() {
             );
           })}
         </div>
-        <div className="mt-4 flex gap-2">
+        <div className="mt-4 flex gap-2 flex-wrap">
           {state.turn.phase === 'upkeep' && !state.turn.phaseComplete.upkeep && (
             <button
               onClick={() => {
@@ -443,9 +444,60 @@ export default function KingdomManager() {
               <Calendar className="w-4 h-4" /> Run Full Upkeep
             </button>
           )}
+          {state.turn.phase === 'event' && !state.turn.phaseComplete.event && (
+            <button
+              onClick={() => {
+                const result = runEventPhase(state);
+                setState(result.state);
+                
+                const degreeLabel = {
+                  criticalSuccess: 'Critical Success!',
+                  success: 'Success',
+                  failure: 'Failure',
+                  criticalFailure: 'Critical Failure!',
+                }[result.resolution.degree];
+                
+                addLog(`EVENT: ${result.event.name}`, 'info');
+                addLog(`${result.event.description}`, 'info');
+                addLog(`${result.event.skill} check: ${result.resolution.roll} + ${result.resolution.modifier} = ${result.resolution.total} vs DC ${result.resolution.dc}`, 'info');
+                addLog(`${degreeLabel}: ${result.resolution.outcome.message}`, result.resolution.degree.includes('Success') ? 'success' : 'failure');
+                if (result.effectLog.length > 0) {
+                  addLog(`Effects: ${result.effectLog.join(', ')}`, result.effectLog.some(e => e.includes('+') && !e.includes('Unrest') && !e.includes('Infamy')) ? 'success' : 'failure');
+                }
+              }}
+              className="btn-royal flex items-center gap-2"
+            >
+              <AlertTriangle className="w-4 h-4" /> Roll Random Event
+            </button>
+          )}
           <button onClick={advancePhase} className="btn-royal flex items-center gap-2"><ChevronRight className="w-4 h-4" /> Advance Phase</button>
-          {state.turn.phase === 'event' && <button onClick={endTurn} className="btn-secondary">End Turn</button>}
+          {state.turn.phase === 'event' && state.turn.phaseComplete.event && <button onClick={endTurn} className="btn-secondary">End Turn</button>}
         </div>
+        
+        {/* Show last event if in event phase and completed */}
+        {state.turn.phase === 'event' && state.turn.lastEvent && (
+          <div className="mt-4 p-4 bg-white/5 rounded-lg border border-white/10">
+            <div className="flex items-center gap-2 mb-2">
+              <AlertTriangle className="w-5 h-5 text-yellow-400" />
+              <span className="font-semibold text-yellow-400">{state.turn.lastEvent.name}</span>
+              <span className={`text-xs px-2 py-0.5 rounded ${
+                state.turn.lastEvent.degree === 'criticalSuccess' ? 'bg-green-500/20 text-green-400' :
+                state.turn.lastEvent.degree === 'success' ? 'bg-blue-500/20 text-blue-400' :
+                state.turn.lastEvent.degree === 'failure' ? 'bg-yellow-500/20 text-yellow-400' :
+                'bg-red-500/20 text-red-400'
+              }`}>
+                {state.turn.lastEvent.degree === 'criticalSuccess' ? 'Crit Success!' :
+                 state.turn.lastEvent.degree === 'success' ? 'Success' :
+                 state.turn.lastEvent.degree === 'failure' ? 'Failure' : 'Crit Failure!'}
+              </span>
+            </div>
+            <p className="text-gray-400 text-sm mb-2">{state.turn.lastEvent.description}</p>
+            <p className="text-gray-300 text-sm">{state.turn.lastEvent.outcome.message}</p>
+            <div className="text-xs text-gray-500 mt-2">
+              {state.turn.lastEvent.skill} check: {state.turn.lastEvent.roll} + {state.turn.lastEvent.modifier} = {state.turn.lastEvent.total} vs DC {state.turn.lastEvent.dc}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
