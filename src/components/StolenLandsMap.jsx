@@ -872,10 +872,10 @@ export default function StolenLandsMap({
         </div>
         <div className="space-y-1">
           {[
-            { id: 'building', label: 'Buildings' },
-            { id: 'resources', label: 'Resources' },
-            { id: 'misc', label: 'Misc' },
-            { id: 'armies', label: 'Armies' },
+            { id: 'building', label: 'Structures', icon: Building },
+            { id: 'resources', label: 'Resources', icon: Wheat },
+            { id: 'misc', label: 'Points of Interest', icon: MapPin },
+            { id: 'armies', label: 'Creatures', icon: Swords },
           ].map(cat => (
             <label key={cat.id} className="flex items-center gap-2 text-xs cursor-pointer">
               <input
@@ -884,6 +884,7 @@ export default function StolenLandsMap({
                 onChange={(e) => setVisibilityFilters(prev => ({ ...prev, [cat.id]: e.target.checked }))}
                 className="rounded"
               />
+              <cat.icon size={12} className={visibilityFilters[cat.id] ? 'text-yellow-400' : 'text-gray-500'} />
               <span className={visibilityFilters[cat.id] ? 'text-white' : 'text-gray-500'}>{cat.label}</span>
             </label>
           ))}
