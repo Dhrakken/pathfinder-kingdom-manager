@@ -1,6 +1,6 @@
 # Kingdom Manager - Kanban Board
 
-> Last updated: 2026-02-07 07:30 EST
+> Last updated: 2026-02-08 08:43 EST
 
 ---
 
@@ -10,9 +10,9 @@
 - [x] ~~**Structure Bonuses** - Buildings provide item bonuses to skills~~
 - [x] ~~**Settlement Level Calc** - Calculate from blocks, apply consumption~~
 - [x] ~~**Storage Capacity** - Commodity caps from structures~~
-- [ ] **Charter Selection** - Kingdom creation wizard step 1
-- [ ] **Heartland Selection** - Kingdom creation wizard step 2  
-- [ ] **Government Selection** - Kingdom creation wizard step 3
+- [x] ~~**Charter Selection** - Kingdom creation wizard step 1~~
+- [x] ~~**Heartland Selection** - Kingdom creation wizard step 2~~
+- [x] ~~**Government Selection** - Kingdom creation wizard step 3~~
 - [x] ~~**Commerce Phase: Collect Taxes** - Proper skill check~~
 - [x] ~~**Commerce Phase: Trade Commodities** - Buy/sell with rates~~
 - [ ] **Commerce Phase: Approve Expenses** - RP spending flow
@@ -55,7 +55,7 @@
 
 ## 🚧 In Progress
 
-- [ ] **Charter/Heartland/Government Selection** - Kingdom creation wizard
+(Currently empty - all active tasks moved to Done!)
 
 ---
 
@@ -76,6 +76,17 @@
 - [x] Rate modifiers based on Trade check
 - [x] TradeModal UI with commodity selection
 - [x] Base values: Food 1, Lumber/Ore/Stone 2, Luxuries 4
+
+### Kingdom Creation Wizard ✅
+- [x] Multi-step wizard with progress indicators
+- [x] Charter selection with ability boosts/flaws
+- [x] Heartland selection with terrain bonuses
+- [x] Government selection with trained skill
+- [x] Two free ability boosts (player choice)
+- [x] Final review screen with all stats
+- [x] Proper ability score calculation with all bonuses
+- [x] Integration with kingdom state initialization
+- [x] Accessible from Quick Actions menu
 
 ### Activity Engine ✅
 - [x] Activities modify state (not just cosmetic)
