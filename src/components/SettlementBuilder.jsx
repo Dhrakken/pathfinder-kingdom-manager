@@ -15,16 +15,16 @@ const BUILDING_IMAGES = {
   'granary': `${BASE}assets/buildings/cottage-2.png`,
   'smithy': `${BASE}assets/buildings/smithy-1.png`,
   'brewery': `${BASE}assets/buildings/brewery-1.png`,
-  'shop': `${BASE}assets/buildings/general-store.png`,
-  'graveyard': `${BASE}assets/buildings/cemetery.png`,
+  'general-store': `${BASE}assets/buildings/general-store.png`,
+  'cemetery': `${BASE}assets/buildings/cemetery.png`,
   'herbalist': `${BASE}assets/buildings/herbalist.png`,
   'mill': `${BASE}assets/buildings/mill.png`,
   'stable': `${BASE}assets/buildings/stable.png`,
   'watchtower': `${BASE}assets/buildings/watchtower.png`,
-  'masons-guild': `${BASE}assets/buildings/stonemason.png`,
+  'stonemason': `${BASE}assets/buildings/stonemason.png`,
   'stockyard': `${BASE}assets/buildings/stockyard.png`,
   'barracks': `${BASE}assets/buildings/barracks.png`,
-  'market': `${BASE}assets/buildings/marketplace.png`,
+  'marketplace': `${BASE}assets/buildings/marketplace.png`,
   'castle': `${BASE}assets/buildings/castle.png`,
   'town-hall': `${BASE}assets/buildings/town-hall.png`,
 };
@@ -468,11 +468,11 @@ export default function SettlementBuilder({
               {/* ── Buildings (rendered back-to-front) ────────── */}
               {buildings.map((b) => {
                 const img = BUILDING_IMAGES[b.structure.id];
-                // Building sprite: positioned above the tile center
-                const bw = TILE_W * (b.w === 2 ? 1.6 : 0.85);
-                const bh = bw * 1.2; // Buildings are taller than wide
+                // Building sprite: positioned above the tile center, nice and big
+                const bw = TILE_W * (b.w === 2 ? 2.2 : 1.3);
+                const bh = bw * 1.3; // Buildings are taller than wide
                 const bx = b.px - bw / 2;
-                const by = b.py - bh + TILE_H * 0.3; // Anchor at bottom of building
+                const by = b.py - bh + TILE_H * 0.15; // Anchor at bottom, buildings "sit" on tile
                 
                 return (
                   <g key={b.slotIndex} className="cursor-pointer">
@@ -493,18 +493,18 @@ export default function SettlementBuilder({
                       />
                     ) : (
                       <>
-                        {/* Fallback: simple isometric box */}
+                        {/* Fallback: simple isometric building */}
                         <rect
-                          x={b.px - 20} y={b.py - 35}
-                          width={40} height={35}
-                          rx={3}
-                          fill="url(#waterGrad)"
-                          opacity={0.8}
+                          x={b.px - 30} y={b.py - 50}
+                          width={60} height={50}
+                          rx={4}
+                          fill="#6b5b3d"
+                          opacity={0.9}
                           stroke="#8b7355"
-                          strokeWidth={1}
+                          strokeWidth={1.5}
                         />
                         <polygon
-                          points={`${b.px - 20},${b.py - 35} ${b.px},${b.py - 48} ${b.px + 20},${b.py - 35}`}
+                          points={`${b.px - 30},${b.py - 50} ${b.px},${b.py - 68} ${b.px + 30},${b.py - 50}`}
                           fill="#a0522d"
                           stroke="#8b4513"
                           strokeWidth={0.5}
